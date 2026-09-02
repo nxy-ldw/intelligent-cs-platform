@@ -252,7 +252,7 @@ router.post('/ai-generate', roleMiddleware('teacher', 'admin'), async (req, res)
   var aiGen = require('../services/aiGenerate');
   try {
     var result = await aiGen.generateQuestions(req.body);
-    res.json({ success: true, added: result.added, api_used: result.api_used });
+    res.json({ success: true, added: result.added, questions: result.questions, api_used: result.api_used });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

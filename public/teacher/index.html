@@ -1961,11 +1961,11 @@
       if (!grade) { showToast('请选择年级', 'warning'); return; }
       var payload = {
         subject: subject,
-        grade: grade,
+        gradeLevel: grade,
         textbookVersion: document.getElementById('aiTextbookVersion').value,
         course: document.getElementById('aiCourse').value,
         knowledgePoint: document.getElementById('aiKnowledgePoint').value.trim(),
-        questionType: document.getElementById('aiQuestionType').value,
+        type: document.getElementById('aiQuestionType').value,
         difficulty: parseInt(document.getElementById('aiDifficulty').value),
         count: parseInt(document.getElementById('aiCount').value)
       };
@@ -1975,7 +1975,7 @@
       try {
         var data = await apiCall('/api/teacher/ai-generate', 'POST', payload);
         var questions = data.questions || [];
-        var apiUsed = data.api || data.apiUsed || data.provider || '未知';
+        var apiUsed = data.api_used || data.api || data.apiUsed || data.provider || '未知';
         var html = '<div class="card"><div class="card-header"><h2 class="card-title">生成结果</h2></div><div class="card-body">';
         html += '<div style="margin-bottom:16px;padding:12px;background:var(--gradient-card);border-radius:8px;font-size:13px;color:var(--text-medium);">';
         html += '成功生成 <strong style="color:var(--success);">' + questions.length + '</strong> 道题目，使用 API：<strong>' + escapeHtml(apiUsed) + '</strong>';
