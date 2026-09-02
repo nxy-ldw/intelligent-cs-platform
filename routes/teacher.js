@@ -65,7 +65,12 @@ router.get('/student/:id/detail', roleMiddleware('teacher'), (req, res) => {
   const student = db.prepare("SELECT id, username, phone, qq, class_code, identity, created_at FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
   if (!student) return res.status(404).json({ error: '学生不存在' });
   const report = ai.generateDiagnosisReport(req.params.id);
-  const answers = db.prepare("SELECT a.*, q.question FROM answers a JOIN questions q ON a.question_id = q.id WHERE a.user_id = ? ORDER BY a.created_at DESC LIMIT 50").all(req.params.id);
+  const answers = db.prepare("SELECT * FROM answers WHERE user_id = ? ORDER BY created_at DESC LIMIT 50").all(req.params.id);
+  const questions = db._raw.questions;
+  for (const a of answers) {
+    const q = questions.find(x => x.id === a.question_id);
+    if (q) a.question = q.question;
+  }
   const wrongCount = db.prepare("SELECT COUNT(*) as c FROM wrong_questions WHERE user_id = ?").get(req.params.id).c;
   res.json({ student, report, answers, wrongCount });
 });
@@ -175,7 +180,10 @@ router.get('/tasks', roleMiddleware('teacher'), (req, res) => {
   const tasks = db.prepare("SELECT * FROM tasks WHERE class_code IN (" + ph + ") ORDER BY created_at DESC").all(...codes);
   for (const task of tasks) {
     task.student_count = db.prepare("SELECT COUNT(*) as c FROM users WHERE class_code = ? AND role = 'student'").get(task.class_code).c;
-    task.completed_count = db.prepare("SELECT COUNT(DISTINCT user_id) as c FROM answers WHERE task_id = ? AND user_id IN (SELECT id FROM users WHERE class_code = ?)").get(task.id, task.class_code).c;
+    const studentIds = db._raw.users.filter(u => u.class_code === task.class_code && u.role === 'student').map(u => u.id);
+    const allAnswers = db._raw.answers.filter(a => a.task_id === task.id && studentIds.includes(a.user_id));
+    const uniqueUsers = new Set(allAnswers.map(a => a.user_id));
+    task.completed_count = uniqueUsers.size;
   }
   res.json({ tasks });
 });

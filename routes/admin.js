@@ -100,7 +100,12 @@ router.get('/logs', (req, res) => {
 });
 
 router.get('/student-logs', (req, res) => {
-  const logs = db.prepare("SELECT sl.*, u.username FROM student_logs sl JOIN users u ON sl.user_id = u.id ORDER BY sl.created_at DESC LIMIT 100").all();
+  const logs = db.prepare("SELECT * FROM student_logs ORDER BY created_at DESC LIMIT 100").all();
+  const users = db._raw.users;
+  for (const log of logs) {
+    const u = users.find(x => x.id === log.user_id);
+    if (u) log.username = u.username;
+  }
   res.json({ logs });
 });
 

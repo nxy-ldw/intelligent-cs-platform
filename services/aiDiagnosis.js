@@ -444,10 +444,15 @@ function calculateClassDiagnosis(classCode) {
 
   const allWrongQuestions = {};
   for (const student of students) {
-    const wrongs = db.prepare("SELECT question_id, COUNT(*) as c FROM answers WHERE user_id = ? AND is_correct = 0 GROUP BY question_id").all(student.id);
-    for (const w of wrongs) {
-      if (!allWrongQuestions[w.question_id]) allWrongQuestions[w.question_id] = 0;
-      allWrongQuestions[w.question_id] += w.c;
+    const wrongAnswers = db._raw.answers.filter(a => a.user_id === student.id && a.is_correct === 0);
+    const groupMap = {};
+    for (const a of wrongAnswers) {
+      if (!groupMap[a.question_id]) groupMap[a.question_id] = 0;
+      groupMap[a.question_id]++;
+    }
+    for (const [qId, c] of Object.entries(groupMap)) {
+      if (!allWrongQuestions[qId]) allWrongQuestions[qId] = 0;
+      allWrongQuestions[qId] += c;
     }
   }
 
@@ -460,13 +465,10 @@ function calculateClassDiagnosis(classCode) {
     })
     .filter(Boolean);
 
-  const totalAnswers = db.prepare(
-    "SELECT COUNT(*) as c FROM answers WHERE user_id IN (SELECT id FROM users WHERE class_code = ? AND role = 'student')"
-  ).get(classCode).c;
-
-  const totalCorrect = db.prepare(
-    "SELECT COUNT(*) as c FROM answers WHERE user_id IN (SELECT id FROM users WHERE class_code = ? AND role = 'student') AND is_correct = 1"
-  ).get(classCode).c;
+  const studentIds = students.map(s => s.id);
+  const allClassAnswers = db._raw.answers.filter(a => studentIds.includes(a.user_id));
+  const totalAnswers = allClassAnswers.length;
+  const totalCorrect = allClassAnswers.filter(a => a.is_correct === 1).length;
 
   return {
     class_code: classCode,

@@ -27,9 +27,12 @@ router.get('/my-class', roleMiddleware('student'), (req, res) => {
 router.get('/tasks', roleMiddleware('student'), (req, res) => {
   const user = db.prepare("SELECT class_code FROM users WHERE id = ?").get(req.user.id);
   if (!user.class_code) return res.json({ tasks: [] });
-  const tasks = db.prepare("SELECT t.*, c.class_name FROM tasks t JOIN classes c ON t.class_code = c.class_code WHERE t.class_code = ? AND t.is_active = 1 ORDER BY t.created_at DESC").all(user.class_code);
+  const tasks = db.prepare("SELECT * FROM tasks WHERE class_code = ? AND is_active = 1 ORDER BY created_at DESC").all(user.class_code);
+  const classes = db._raw.classes;
   for (const task of tasks) {
-    const answered = db.prepare("SELECT COUNT(DISTINCT question_id) as c FROM answers WHERE user_id = ? AND task_id = ?").get(req.user.id, task.id).c;
+    const cls = classes.find(c => c.class_code === task.class_code);
+    task.class_name = cls ? cls.class_name : '';
+    const answered = db.countDistinct('answers', 'question_id', { user_id: req.user.id, task_id: task.id });
     const correct = db.prepare("SELECT COUNT(*) as c FROM answers WHERE user_id = ? AND task_id = ? AND is_correct = 1").get(req.user.id, task.id).c;
     task.answered = answered;
     task.total_questions = task.question_count || 0;
@@ -84,23 +87,33 @@ router.post('/tasks/:taskId/submit', roleMiddleware('student'), (req, res) => {
 
 router.get('/answers/history', roleMiddleware('student'), (req, res) => {
   const { taskId, kpId } = req.query;
-  let sql = "SELECT a.*, q.question, q.options FROM answers a JOIN questions q ON a.question_id = q.id WHERE a.user_id = ?";
+  let sql = "SELECT * FROM answers WHERE user_id = ?";
   const params = [req.user.id];
-  if (taskId) { sql += " AND a.task_id = ?"; params.push(taskId); }
-  if (kpId) { sql += " AND a.kp_id = ?"; params.push(kpId); }
-  sql += " ORDER BY a.created_at DESC LIMIT 200";
+  if (taskId) { sql += " AND task_id = ?"; params.push(taskId); }
+  if (kpId) { sql += " AND kp_id = ?"; params.push(kpId); }
+  sql += " ORDER BY created_at DESC LIMIT 200";
   const answers = db.prepare(sql).all(...params);
+  const questions = db._raw.questions;
+  for (const a of answers) {
+    const q = questions.find(x => x.id === a.question_id);
+    if (q) { a.question = q.question; a.options = q.options; }
+  }
   res.json({ answers });
 });
 
 router.get('/wrong-questions', roleMiddleware('student'), (req, res) => {
   const { kpId } = req.query;
-  let sql = "SELECT wq.*, q.question, q.options, q.answer, q.analysis, q.difficulty FROM wrong_questions wq JOIN questions q ON wq.question_id = q.id WHERE wq.user_id = ?";
+  let sql = "SELECT * FROM wrong_questions WHERE user_id = ?";
   const params = [req.user.id];
-  if (kpId) { sql += " AND wq.kp_id = ?"; params.push(kpId); }
-  sql += " ORDER BY wq.last_wrong_at DESC";
-  const questions = db.prepare(sql).all(...params);
-  res.json({ questions, total: questions.length });
+  if (kpId) { sql += " AND kp_id = ?"; params.push(kpId); }
+  sql += " ORDER BY last_wrong_at DESC";
+  const wqs = db.prepare(sql).all(...params);
+  const questions = db._raw.questions;
+  const result = wqs.map(wq => {
+    const q = questions.find(x => x.id === wq.question_id);
+    return q ? { ...wq, question: q.question, options: q.options, answer: q.answer, analysis: q.analysis, difficulty: q.difficulty } : wq;
+  });
+  res.json({ questions: result, total: result.length });
 });
 
 router.post('/wrong-questions/:id/redo', roleMiddleware('student'), (req, res) => {
@@ -109,7 +122,7 @@ router.post('/wrong-questions/:id/redo', roleMiddleware('student'), (req, res) =
   if (!wq) return res.status(404).json({ error: '错题不存在' });
   const question = db.prepare("SELECT * FROM questions WHERE id = ?").get(wq.question_id);
   const isCorrect = answer.trim().toUpperCase() === (question.answer || '').trim().toUpperCase();
-  if (isCorrect) { db.prepare("UPDATE wrong_questions SET correct_count = COALESCE(correct_count, 0) + 1, last_correct_at = ? WHERE id = ?").run(new Date().toISOString(), wq.id); }
+  if (isCorrect) { db.updateCalc('wrong_questions', { id: wq.id }, 'correct_count', 1); db.prepare("UPDATE wrong_questions SET last_correct_at = ? WHERE id = ?").run(new Date().toISOString(), wq.id); }
   db.prepare("INSERT INTO answers (user_id, question_id, kp_id, kp_name, difficulty, user_answer, correct_answer, is_correct, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'redo')").run(req.user.id, question.id, question.kp_id, question.kp_name, question.difficulty, answer, question.answer, isCorrect ? 1 : 0);
   let explanation = null;
   if (!isCorrect) { explanation = ai.explainWrongQuestion(question, answer); }
@@ -176,8 +189,13 @@ router.get('/export/diagnosis', roleMiddleware('student'), (req, res) => {
 });
 
 router.get('/export/wrong-questions', roleMiddleware('student'), (req, res) => {
-  const wqs = db.prepare("SELECT wq.*, q.question, q.options, q.answer, q.analysis FROM wrong_questions wq JOIN questions q ON wq.question_id = q.id WHERE wq.user_id = ? ORDER BY wq.last_wrong_at DESC").all(req.user.id);
-  res.json({ questions: wqs, total: wqs.length });
+  const wqs = db.prepare("SELECT * FROM wrong_questions WHERE user_id = ? ORDER BY last_wrong_at DESC").all(req.user.id);
+  const questions = db._raw.questions;
+  const result = wqs.map(wq => {
+    const q = questions.find(x => x.id === wq.question_id);
+    return q ? { ...wq, question: q.question, options: q.options, answer: q.answer, analysis: q.analysis } : wq;
+  });
+  res.json({ questions: result, total: result.length });
 });
 
 module.exports = router;

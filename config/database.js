@@ -141,7 +141,36 @@ const dbWrapper = {
     };
   },
   pragma() {},
-  exec() {}
+  exec() {},
+  joinRows(rows1, rows2, key1, key2, fields) {
+    return rows1.map(r1 => {
+      const r2 = rows2.find(x => x[key2] === r1[key1]);
+      if (r2 && fields) {
+        const merged = { ...r1 };
+        for (const f of fields) { if (r2[f] !== undefined) merged[f] = r2[f]; }
+        return merged;
+      }
+      return r2 ? { ...r1, ...r2 } : r1;
+    });
+  },
+  countDistinct(table, distinctCol, conditions) {
+    const rows = where(table, conditions || {});
+    const set = new Set(rows.map(r => r[distinctCol]));
+    return set.size;
+  },
+  updateCalc(table, conditions, col, delta) {
+    for (const row of db[table]) {
+      let match = true;
+      for (const [k, v] of Object.entries(conditions)) {
+        if (row[k] !== v) { match = false; break; }
+      }
+      if (match) {
+        row[col] = (row[col] || 0) + delta;
+      }
+    }
+    save();
+    return { changes: 1 };
+  }
 };
 
 function _execute(sql, params, mode) {
