@@ -5,8 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>学生端 - 智能学习平台</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #6366f1;
@@ -41,7 +39,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
       background: var(--bg-main);
       color: var(--text-dark);
       -webkit-font-smoothing: antialiased;
@@ -1820,7 +1818,7 @@
         ctx.stroke();
       }
       ctx.fillStyle = '#475569';
-      ctx.font = '11px Inter, sans-serif';
+      ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       for (var p = 0; p < n; p++) {
@@ -1850,7 +1848,7 @@
       var total = errorAnalysis.reduce(function(sum, e) { return sum + (e.count || 0); }, 0);
       if (total === 0) {
         ctx.fillStyle = '#94a3b8';
-        ctx.font = '14px Inter, sans-serif';
+        ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('暂无错误数据', cx, cy);
         return;
@@ -1872,16 +1870,16 @@
       ctx.fillStyle = 'white';
       ctx.fill();
       ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 24px Inter, sans-serif';
+      ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(total, cx, cy - 8);
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '12px Inter, sans-serif';
+      ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
       ctx.fillText('总错题', cx, cy + 12);
       var legendX = cx + r + 30;
       var legendY = cy - (errorAnalysis.length * 20) / 2;
-      ctx.font = '12px Inter, sans-serif';
+      ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif';
       ctx.textAlign = 'left';
       for (var j = 0; j < errorAnalysis.length; j++) {
         var ea = errorAnalysis[j];
