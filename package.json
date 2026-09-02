@@ -1,7 +1,7 @@
 {
-  "name": "intelligent-cs-platform",
-  "version": "1.0.0",
-  "description": "智能客服系统教学平台 - 学生端/教师端/管理端",
+  "name": "ai-learning-diagnosis",
+  "version": "2.0.0",
+  "description": "AI个性化学习诊断辅导系统",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -1,38 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const { authMiddleware, roleMiddleware } = require('../middleware/auth');
+const ai = require('../services/aiDiagnosis');
 
 router.use(authMiddleware);
-
-router.post('/create-class', roleMiddleware('teacher'), (req, res) => {
-  const { className } = req.body;
-  if (!className) return res.status(400).json({ error: '请输入班级名称' });
-
-  const classCode = uuidv4().substring(0, 8).toUpperCase();
-  const user = db.prepare("SELECT id, username FROM users WHERE id = ?").get(req.user.id);
-
-  db.prepare(
-    "INSERT INTO classes (class_code, class_name, teacher_id, teacher_name) VALUES (?, ?, ?, ?)"
-  ).run(classCode, className, user.id, user.username);
-
-  res.json({ message: '班级创建成功', class: { classCode, className, teacherName: user.username } });
-});
 
 router.get('/classes', roleMiddleware('teacher'), (req, res) => {
   const classes = db.prepare("SELECT * FROM classes WHERE teacher_id = ? ORDER BY created_at DESC").all(req.user.id);
   for (const cls of classes) {
-    const count = db.prepare("SELECT COUNT(*) as c FROM users WHERE class_code = ? AND role = 'student'").get(cls.class_code);
-    cls.studentCount = count.c;
+    cls.studentCount = db.prepare("SELECT COUNT(*) as c FROM users WHERE class_code = ? AND role = 'student'").get(cls.class_code).c;
   }
   res.json({ classes });
+});
+
+router.post('/create-class', roleMiddleware('teacher'), (req, res) => {
+  const { className } = req.body;
+  if (!className) return res.status(400).json({ error: '请输入班级名称' });
+  const classCode = uuidv4().substring(0, 8).toUpperCase();
+  db.prepare("INSERT INTO classes (class_code, class_name, teacher_id, teacher_name) VALUES (?, ?, ?, ?)").run(classCode, className, req.user.id, req.user.username);
+  res.json({ message: '班级创建成功', classCode, className });
 });
 
 router.delete('/classes/:id', roleMiddleware('teacher'), (req, res) => {
   const cls = db.prepare("SELECT * FROM classes WHERE id = ? AND teacher_id = ?").get(req.params.id, req.user.id);
   if (!cls) return res.status(404).json({ error: '班级不存在或无权限' });
-
   db.prepare("UPDATE users SET class_code = '' WHERE class_code = ?").run(cls.class_code);
   db.prepare("DELETE FROM classes WHERE id = ?").run(req.params.id);
   res.json({ message: '班级已删除' });
@@ -42,19 +36,19 @@ router.get('/students', roleMiddleware('teacher'), (req, res) => {
   const { classCode } = req.query;
   let students;
   if (classCode) {
-    students = db.prepare(
-      "SELECT id, username, phone, qq, class_code, identity, is_banned, created_at FROM users WHERE role = 'student' AND class_code = ? ORDER BY created_at DESC"
-    ).all(classCode);
+    students = db.prepare("SELECT id, username, phone, qq, class_code, identity, is_banned, created_at FROM users WHERE role = 'student' AND class_code = ? ORDER BY created_at DESC").all(classCode);
   } else {
     const classes = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
     const codes = classes.map(c => c.class_code);
-    if (codes.length === 0) {
-      return res.json({ students: [] });
-    }
-    const placeholders = codes.map(() => '?').join(',');
-    students = db.prepare(
-      `SELECT id, username, phone, qq, class_code, identity, is_banned, created_at FROM users WHERE role = 'student' AND class_code IN (${placeholders}) ORDER BY created_at DESC`
-    ).all(...codes);
+    if (codes.length === 0) return res.json({ students: [] });
+    const ph = codes.map(() => '?').join(',');
+    students = db.prepare("SELECT id, username, phone, qq, class_code, identity, is_banned, created_at FROM users WHERE role = 'student' AND class_code IN (" + ph + ") ORDER BY created_at DESC").all(...codes);
+  }
+  for (const s of students) {
+    const total = db.prepare("SELECT COUNT(*) as c FROM answers WHERE user_id = ?").get(s.id).c;
+    const correct = db.prepare("SELECT COUNT(*) as c FROM answers WHERE user_id = ? AND is_correct = 1").get(s.id).c;
+    s.total_answers = total;
+    s.correct_rate = total > 0 ? Math.round(correct / total * 100) : 0;
   }
   res.json({ students });
 });
@@ -63,64 +57,142 @@ router.put('/students/:id/identity', roleMiddleware('teacher'), (req, res) => {
   const { identity } = req.body;
   const student = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
   if (!student) return res.status(404).json({ error: '学生不存在' });
-
-  const teacherClasses = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
-  const teacherCodes = teacherClasses.map(c => c.class_code);
-  if (!teacherCodes.includes(student.class_code)) {
-    return res.status(403).json({ error: '该学生不在您的班级中' });
-  }
-
   db.prepare("UPDATE users SET identity = ? WHERE id = ?").run(identity, req.params.id);
-  db.prepare("INSERT INTO student_logs (user_id, action, detail) VALUES (?, 'identity_change', ?)").run(
-    student.id, `身份变更为：${identity}（由教师${req.user.username}操作）`
+  res.json({ message: '身份已更新' });
+});
+
+router.get('/student/:id/detail', roleMiddleware('teacher'), (req, res) => {
+  const student = db.prepare("SELECT id, username, phone, qq, class_code, identity, created_at FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
+  if (!student) return res.status(404).json({ error: '学生不存在' });
+  const report = ai.generateDiagnosisReport(req.params.id);
+  const answers = db.prepare("SELECT a.*, q.question FROM answers a JOIN questions q ON a.question_id = q.id WHERE a.user_id = ? ORDER BY a.created_at DESC LIMIT 50").all(req.params.id);
+  const wrongCount = db.prepare("SELECT COUNT(*) as c FROM wrong_questions WHERE user_id = ?").get(req.params.id).c;
+  res.json({ student, report, answers, wrongCount });
+});
+
+router.post('/students/batch-add', roleMiddleware('teacher'), (req, res) => {
+  const { classCode, students } = req.body;
+  if (!classCode || !students) return res.status(400).json({ error: '参数不完整' });
+  const created = [];
+  const failed = [];
+  for (const s of students) {
+    if (!s.username || !s.password) { failed.push({ reason: '缺少用户名或密码' }); continue; }
+    const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(s.username);
+    if (existing) { failed.push({ username: s.username, reason: '已存在' }); continue; }
+    const hash = bcrypt.hashSync(s.password, 10);
+    db.prepare("INSERT INTO users (username, password, role, class_code, created_by) VALUES (?, ?, 'student', ?, ?)").run(s.username, hash, classCode, req.user.username);
+    created.push({ username: s.username, password: s.password });
+  }
+  res.json({ created, failed, successCount: created.length, failCount: failed.length });
+});
+
+router.get('/questions', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const { kpId, difficulty, keyword } = req.query;
+  let sql = "SELECT * FROM questions WHERE 1=1";
+  const params = [];
+  if (kpId) { sql += " AND kp_id = ?"; params.push(kpId); }
+  if (difficulty) { sql += " AND difficulty = ?"; params.push(difficulty); }
+  if (keyword) { sql += " AND question LIKE ?"; params.push('%' + keyword + '%'); }
+  sql += " ORDER BY kp_id, difficulty, id DESC";
+  const questions = db.prepare(sql).all(...params);
+  res.json({ questions, total: questions.length });
+});
+
+router.post('/questions', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const { kp_id, kp_name, difficulty, type, question, options, answer, analysis } = req.body;
+  if (!kp_id || !question || !answer) return res.status(400).json({ error: '必填项不完整' });
+  const kp = db.prepare("SELECT * FROM knowledge_points WHERE id = ?").get(kp_id);
+  const kpName = kp_name || (kp ? kp.name : '');
+  const result = db.prepare("INSERT INTO questions (kp_id, kp_name, difficulty, type, question, options, answer, analysis, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").run(
+    kp_id, kpName, difficulty || 2, type || 'single', question, options || '[]', answer, analysis || '', req.user.username
   );
-
-  res.json({ message: '学生身份已更新' });
+  res.json({ message: '题目添加成功', id: result.lastInsertRowid });
 });
 
-router.get('/student/:id/logs', roleMiddleware('teacher'), (req, res) => {
-  const student = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
-  if (!student) return res.status(404).json({ error: '学生不存在' });
-
-  const teacherClasses = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
-  const teacherCodes = teacherClasses.map(c => c.class_code);
-  if (!teacherCodes.includes(student.class_code)) {
-    return res.status(403).json({ error: '无权查看该学生信息' });
-  }
-
-  const logs = db.prepare("SELECT * FROM student_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT 100").all(req.params.id);
-  const chatCount = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ?").get(req.params.id);
-  res.json({ student, logs, chatCount: chatCount.c });
+router.put('/questions/:id', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const q = db.prepare("SELECT * FROM questions WHERE id = ?").get(req.params.id);
+  if (!q) return res.status(404).json({ error: '题目不存在' });
+  const { kp_id, kp_name, difficulty, type, question, options, answer, analysis } = req.body;
+  db.prepare("UPDATE questions SET kp_id = ?, kp_name = ?, difficulty = ?, type = ?, question = ?, options = ?, answer = ?, analysis = ? WHERE id = ?").run(
+    kp_id || q.kp_id, kp_name || q.kp_name, difficulty || q.difficulty, type || q.type,
+    question || q.question, options !== undefined ? options : q.options, answer || q.answer,
+    analysis !== undefined ? analysis : q.analysis, req.params.id
+  );
+  res.json({ message: '题目已更新' });
 });
 
-router.put('/students/:id/qq', roleMiddleware('teacher'), (req, res) => {
-  const { qq } = req.body;
-  const student = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
-  if (!student) return res.status(404).json({ error: '学生不存在' });
-
-  const teacherClasses = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
-  const teacherCodes = teacherClasses.map(c => c.class_code);
-  if (!teacherCodes.includes(student.class_code)) {
-    return res.status(403).json({ error: '该学生不在您的班级中' });
-  }
-
-  db.prepare("UPDATE users SET qq = ? WHERE id = ?").run(qq, req.params.id);
-  res.json({ message: 'QQ号已更新' });
+router.delete('/questions/:id', roleMiddleware('teacher', 'admin'), (req, res) => {
+  db.prepare("DELETE FROM questions WHERE id = ?").run(req.params.id);
+  res.json({ message: '题目已删除' });
 });
 
-router.put('/students/:id/phone', roleMiddleware('teacher'), (req, res) => {
-  const { phone } = req.body;
-  const student = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'student'").get(req.params.id);
-  if (!student) return res.status(404).json({ error: '学生不存在' });
+router.get('/knowledge-points', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const kps = db.prepare("SELECT * FROM knowledge_points ORDER BY difficulty, id").all();
+  res.json({ knowledgePoints: kps });
+});
 
-  const teacherClasses = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
-  const teacherCodes = teacherClasses.map(c => c.class_code);
-  if (!teacherCodes.includes(student.class_code)) {
-    return res.status(403).json({ error: '该学生不在您的班级中' });
+router.post('/knowledge-points', roleMiddleware('admin'), (req, res) => {
+  const { name, subject, difficulty, prerequisites, description } = req.body;
+  if (!name) return res.status(400).json({ error: '名称必填' });
+  db.prepare("INSERT INTO knowledge_points (name, subject, difficulty, prerequisites, description) VALUES (?, ?, ?, ?, ?)").run(
+    name, subject || '数学', difficulty || 2, prerequisites || '', description || ''
+  );
+  res.json({ message: '知识点添加成功' });
+});
+
+router.put('/knowledge-points/:id', roleMiddleware('admin'), (req, res) => {
+  const { name, subject, difficulty, prerequisites, description } = req.body;
+  db.prepare("UPDATE knowledge_points SET name = ?, subject = ?, difficulty = ?, prerequisites = ?, description = ? WHERE id = ?").run(
+    name, subject, difficulty, prerequisites || '', description || '', req.params.id
+  );
+  res.json({ message: '知识点已更新' });
+});
+
+router.delete('/knowledge-points/:id', roleMiddleware('admin'), (req, res) => {
+  db.prepare("DELETE FROM knowledge_points WHERE id = ?").run(req.params.id);
+  res.json({ message: '知识点已删除' });
+});
+
+router.post('/tasks', roleMiddleware('teacher'), (req, res) => {
+  const { classCode, title, description, questionIds, deadline } = req.body;
+  if (!classCode || !title || !questionIds) return res.status(400).json({ error: '参数不完整' });
+  const qidStr = Array.isArray(questionIds) ? questionIds.join(',') : '';
+  const result = db.prepare("INSERT INTO tasks (class_code, title, description, question_ids, question_count, deadline, created_by, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)").run(
+    classCode, title, description || '', qidStr, (questionIds || []).length, deadline || null, req.user.username
+  );
+  const students = db.prepare("SELECT id FROM users WHERE class_code = ? AND role = 'student'").all(classCode);
+  for (const s of students) {
+    ai.addNotification(s.id, 'task', '新练习任务', '老师发布了新任务：' + title);
   }
+  res.json({ message: '任务发布成功', taskId: result.lastInsertRowid });
+});
 
-  db.prepare("UPDATE users SET phone = ? WHERE id = ?").run(phone, req.params.id);
-  res.json({ message: '手机号已更新' });
+router.get('/tasks', roleMiddleware('teacher'), (req, res) => {
+  const classes = db.prepare("SELECT class_code FROM classes WHERE teacher_id = ?").all(req.user.id);
+  const codes = classes.map(c => c.class_code);
+  if (codes.length === 0) return res.json({ tasks: [] });
+  const ph = codes.map(() => '?').join(',');
+  const tasks = db.prepare("SELECT * FROM tasks WHERE class_code IN (" + ph + ") ORDER BY created_at DESC").all(...codes);
+  for (const task of tasks) {
+    task.student_count = db.prepare("SELECT COUNT(*) as c FROM users WHERE class_code = ? AND role = 'student'").get(task.class_code).c;
+    task.completed_count = db.prepare("SELECT COUNT(DISTINCT user_id) as c FROM answers WHERE task_id = ? AND user_id IN (SELECT id FROM users WHERE class_code = ?)").get(task.id, task.class_code).c;
+  }
+  res.json({ tasks });
+});
+
+router.delete('/tasks/:id', roleMiddleware('teacher'), (req, res) => {
+  db.prepare("DELETE FROM tasks WHERE id = ?").run(req.params.id);
+  res.json({ message: '任务已删除' });
+});
+
+router.get('/class-diagnosis/:classCode', roleMiddleware('teacher'), (req, res) => {
+  const diagnosis = ai.calculateClassDiagnosis(req.params.classCode);
+  res.json(diagnosis);
+});
+
+router.get('/student-diagnosis/:studentId', roleMiddleware('teacher'), (req, res) => {
+  const report = ai.generateDiagnosisReport(req.params.studentId);
+  res.json(report);
 });
 
 module.exports = router;

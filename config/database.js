@@ -13,11 +13,26 @@ let db = {
   users: [],
   classes: [],
   announcements: [],
-  messages: [],
   settings: [],
-  knowledge_base: [],
   student_logs: [],
-  _seq: { users: 0, classes: 0, announcements: 0, messages: 0, knowledge_base: 0, student_logs: 0 }
+  knowledge_points: [],
+  questions: [],
+  tasks: [],
+  task_questions: [],
+  answers: [],
+  wrong_questions: [],
+  diagnosis_reports: [],
+  notifications: [],
+  operation_logs: [],
+  admin_logs: [],
+  system_config: [],
+  _seq: {
+    users: 0, classes: 0, announcements: 0, student_logs: 0,
+    knowledge_points: 0, questions: 0, tasks: 0, task_questions: 0,
+    answers: 0, wrong_questions: 0, diagnosis_reports: 0,
+    notifications: 0, operation_logs: 0, admin_logs: 0,
+    system_config: 0
+  }
 };
 
 function load() {
@@ -25,14 +40,15 @@ function load() {
     try {
       const raw = fs.readFileSync(dbPath, 'utf8');
       db = JSON.parse(raw);
-      if (!db._seq) db._seq = { users: 0, classes: 0, announcements: 0, messages: 0, knowledge_base: 0, student_logs: 0 };
-      if (!db.users) db.users = [];
-      if (!db.classes) db.classes = [];
-      if (!db.announcements) db.announcements = [];
-      if (!db.messages) db.messages = [];
-      if (!db.settings) db.settings = [];
-      if (!db.knowledge_base) db.knowledge_base = [];
-      if (!db.student_logs) db.student_logs = [];
+      const defaults = ['users', 'classes', 'announcements', 'settings', 'student_logs',
+        'knowledge_points', 'questions', 'tasks', 'task_questions', 'answers',
+        'wrong_questions', 'diagnosis_reports', 'notifications', 'operation_logs',
+        'admin_logs', 'system_config'];
+      for (const t of defaults) { if (!db[t]) db[t] = []; }
+      if (!db._seq) {
+        db._seq = {};
+        for (const t of defaults) db._seq[t] = 0;
+      }
     } catch (e) {
       console.error('Failed to load database, starting fresh:', e.message);
     }
@@ -43,20 +59,14 @@ let saveTimer = null;
 function save() {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8');
-    } catch (e) {
-      console.error('Failed to save database:', e.message);
-    }
+    try { fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8'); }
+    catch (e) { console.error('Failed to save database:', e.message); }
   }, 100);
 }
 
 function saveNow() {
-  try {
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8');
-  } catch (e) {
-    console.error('Failed to save database:', e.message);
-  }
+  try { fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8'); }
+  catch (e) { console.error('Failed to save database:', e.message); }
 }
 
 load();
@@ -76,7 +86,14 @@ function nowStr() {
 function where(table, conditions) {
   return db[table].filter(row => {
     for (const [key, val] of Object.entries(conditions)) {
-      if (row[key] !== val) return false;
+      if (val && typeof val === 'object' && val.$in) {
+        if (!val.$in.includes(row[key])) return false;
+      } else if (val && typeof val === 'object' && val.$like) {
+        const pattern = val.$like.replace(/%/g, '.*').replace(/\?/g, '.');
+        if (!new RegExp(pattern, 'i').test(String(row[key] || ''))) return false;
+      } else {
+        if (row[key] !== val) return false;
+      }
     }
     return true;
   });
@@ -96,10 +113,7 @@ function update(table, conditions, updates) {
     for (const [key, val] of Object.entries(conditions)) {
       if (row[key] !== val) { match = false; break; }
     }
-    if (match) {
-      Object.assign(row, updates);
-      count++;
-    }
+    if (match) { Object.assign(row, updates); count++; }
   }
   if (count > 0) save();
   return { changes: count };
@@ -121,15 +135,9 @@ function del(table, conditions) {
 const dbWrapper = {
   prepare(sql) {
     return {
-      get(...params) {
-        return _execute(sql, params, 'get');
-      },
-      all(...params) {
-        return _execute(sql, params, 'all');
-      },
-      run(...params) {
-        return _execute(sql, params, 'run');
-      }
+      get(...params) { return _execute(sql, params, 'get'); },
+      all(...params) { return _execute(sql, params, 'all'); },
+      run(...params) { return _execute(sql, params, 'run'); }
     };
   },
   pragma() {},
@@ -139,19 +147,15 @@ const dbWrapper = {
 function _execute(sql, params, mode) {
   sql = sql.trim().replace(/\s+/g, ' ');
 
-  if (sql.startsWith('SELECT COUNT(*) as c FROM')) {
+  if (sql.startsWith('SELECT COUNT(*)')) {
     const tableMatch = sql.match(/FROM (\w+)/);
     if (!tableMatch) return mode === 'get' ? { c: 0 } : [];
     let table = tableMatch[1];
-
     let conditions = {};
     const whereMatch = sql.match(/WHERE (.+)/i);
-    if (whereMatch) {
-      conditions = _parseWhere(whereMatch[1], params);
-    }
+    if (whereMatch) conditions = _parseWhere(whereMatch[1], params);
     const rows = where(table, conditions);
-    const result = { c: rows.length };
-    return mode === 'get' ? result : [result];
+    return mode === 'get' ? { c: rows.length } : [{ c: rows.length }];
   }
 
   if (sql.startsWith('SELECT')) {
@@ -160,16 +164,16 @@ function _execute(sql, params, mode) {
     let table = tableMatch[1];
     let rows = db[table] ? [...db[table]] : [];
 
-    const whereMatch = sql.match(/WHERE (.+?)(?:ORDER BY|LIMIT|$)/i);
+    const whereMatch = sql.match(/WHERE (.+?)(?:ORDER BY|LIMIT|OFFSET|$)/i);
     if (whereMatch) {
-      conditions = _parseWhere(whereMatch[1], params);
+      const conditions = _parseWhere(whereMatch[1], params);
       rows = rows.filter(row => {
         for (const [key, val] of Object.entries(conditions)) {
           if (val && typeof val === 'object' && val.$in) {
             if (!val.$in.includes(row[key])) return false;
           } else if (val && typeof val === 'object' && val.$like) {
             const pattern = val.$like.replace(/%/g, '.*');
-            if (!new RegExp(pattern, 'i').test(row[key] || '')) return false;
+            if (!new RegExp(pattern, 'i').test(String(row[key] || ''))) return false;
           } else {
             if (row[key] !== val) return false;
           }
@@ -178,25 +182,28 @@ function _execute(sql, params, mode) {
       });
     }
 
-    const orderMatch = sql.match(/ORDER BY (\w+)(?:\s+(ASC|DESC))?/i);
+    const orderMatch = sql.match(/ORDER BY (.+?)(?:LIMIT|OFFSET|$)/i);
     if (orderMatch) {
-      const col = orderMatch[1];
-      const dir = (orderMatch[2] || 'ASC').toUpperCase();
+      const parts = orderMatch[1].split(',').map(s => s.trim());
       rows.sort((a, b) => {
-        if (a[col] < b[col]) return dir === 'ASC' ? -1 : 1;
-        if (a[col] > b[col]) return dir === 'ASC' ? 1 : -1;
+        for (const part of parts) {
+          const [col, dir = 'ASC'] = part.split(/\s+/);
+          if (a[col] < b[col]) return dir.toUpperCase() === 'ASC' ? -1 : 1;
+          if (a[col] > b[col]) return dir.toUpperCase() === 'ASC' ? 1 : -1;
+        }
         return 0;
       });
     }
 
+    const offsetMatch = sql.match(/OFFSET (\d+)/i);
+    if (offsetMatch) {
+      const offset = parseInt(offsetMatch[1]);
+      rows = rows.slice(offset);
+    }
+
     const limitMatch = sql.match(/LIMIT (\d+)/i);
     if (limitMatch) {
-      const limit = parseInt(limitMatch[1]);
-      if (sql.match(/ORDER BY.*DESC/i)) {
-        rows = rows.slice(0, limit).reverse();
-      } else {
-        rows = rows.slice(0, limit);
-      }
+      rows = rows.slice(0, parseInt(limitMatch[1]));
     }
 
     if (mode === 'get') return rows[0] || null;
@@ -211,12 +218,10 @@ function _execute(sql, params, mode) {
     const colsMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/);
     if (colsMatch) {
       const cols = colsMatch[1].split(',').map(s => s.trim());
-      cols.forEach((col, i) => {
-        row[col] = params[i];
-      });
+      cols.forEach((col, i) => { row[col] = params[i]; });
     }
-    insert(table, row);
-    return { changes: 1, lastInsertRowid: row.id };
+    const result = insert(table, row);
+    return { changes: 1, lastInsertRowid: result.id };
   }
 
   if (sql.startsWith('UPDATE')) {
@@ -225,7 +230,6 @@ function _execute(sql, params, mode) {
     const table = tableMatch[1];
     const setMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
     const whereMatch = sql.match(/WHERE\s+(.+)/i);
-
     if (!setMatch || !whereMatch) return { changes: 0 };
     const setParts = setMatch[1].split(',').map(s => s.trim());
     const updates = {};
@@ -259,10 +263,9 @@ function _execute(sql, params, mode) {
 function _parseWhere(whereClause, params) {
   const conditions = {};
   let paramIdx = 0;
-  let cleaned = whereClause.replace(/AND/gi, '§AND§').split('§');
-
-  for (const part of cleaned) {
-    const trimmed = part.trim().replace(/^AND\s+/i, '').trim();
+  const parts = whereClause.split(/\s+AND\s+/i);
+  for (const part of parts) {
+    const trimmed = part.trim();
     if (!trimmed) continue;
 
     const likeMatch = trimmed.match(/(\w+)\s+LIKE\s*\?/i);
@@ -271,10 +274,11 @@ function _parseWhere(whereClause, params) {
       continue;
     }
 
-    const inMatch = trimmed.match(/(\w+)\s+IN\s+\(([^)]+)\)/i);
+    const inMatch = trimmed.match(/(\w+)\s+IN\s*\(([?,]+)\)/i);
     if (inMatch) {
-      const placeholders = inMatch[2].split(',').map(s => s.trim());
-      const values = placeholders.map(() => params[paramIdx++]);
+      const count = inMatch[2].split(',').length;
+      const values = [];
+      for (let i = 0; i < count; i++) values.push(params[paramIdx++]);
       conditions[inMatch[1]] = { $in: values };
       continue;
     }
@@ -282,6 +286,13 @@ function _parseWhere(whereClause, params) {
     const eqMatch = trimmed.match(/(\w+)\s*=\s*\?/);
     if (eqMatch) {
       conditions[eqMatch[1]] = params[paramIdx++];
+      continue;
+    }
+
+    const gtMatch = trimmed.match(/(\w+)\s*>\s*\?/);
+    if (gtMatch) {
+      const val = params[paramIdx++];
+      conditions['_gt_' + gtMatch[1]] = val;
       continue;
     }
   }
@@ -316,37 +327,209 @@ function ensureDefaultData() {
   }
 
   const maintenance = db.settings.find(s => s.key === 'maintenance_mode');
-  if (!maintenance) {
-    db.settings.push({ key: 'maintenance_mode', value: 'false' });
+  if (!maintenance) db.settings.push({ key: 'maintenance_mode', value: 'false' });
+
+  if (!db.settings.find(s => s.key === 'ai_config')) {
+    db.settings.push({
+      key: 'ai_config',
+      value: JSON.stringify({
+        contextLength: 20,
+        safetyFilter: true,
+        adaptiveDifficulty: true,
+        autoGenerateReport: true
+      })
+    });
   }
 
-  const kbCount = db.knowledge_base.length;
-  if (kbCount === 0) {
-    const kbs = [
-      { cat: '系统介绍', q: '这个系统是做什么的', a: '本系统是一个智能客服系统教学平台，基于医学知识库的智能应答系统。包含意图识别、多轮对话、知识库问答、人机协同等核心功能。', kw: '系统,介绍,做什么,功能,是什么' },
-      { cat: '系统介绍', q: '系统的核心功能有哪些', a: '核心功能包括：1.核心对话系统（意图识别、多轮对话、知识库问答）2.知识库管理 3.智能分配（人机协同）4.多渠道接入 5.数据分析与监控', kw: '核心,功能,有哪些,包括' },
-      { cat: '对话系统', q: '如何进行意图识别', a: '意图识别通过自然语言处理技术，将用户输入分类为症状咨询、用药指导、预约挂号、报告解读等类别。系统使用关键词匹配和语义分析实现意图分类。', kw: '意图,识别,分类,自然语言' },
-      { cat: '对话系统', q: '支持多轮对话吗', a: '是的，系统支持多轮对话。能够在连续对话中保持上下文，理解用户追问和补充信息，提供连贯的医疗服务咨询体验。', kw: '多轮,对话,上下文,追问' },
-      { cat: '知识库', q: '知识库包含哪些内容', a: '知识库包含：疾病信息、症状描述、治疗方案、药物信息、科室信息、医生信息等。通过知识图谱建立症状-疾病-科室-医生的关联关系。', kw: '知识库,包含,内容,疾病,症状' },
-      { cat: '知识库', q: '知识库如何维护', a: '知识库支持内容版本管理、审核工作流、定期更新机制。管理员可以添加、编辑、删除知识条目，确保医疗信息的准确性和时效性。', kw: '维护,更新,版本,审核' },
-      { cat: '人机协同', q: '什么时候转人工', a: '系统在以下情况自动转人工：1.AI置信度低于阈值 2.检测到紧急/危重症状 3.用户主动要求人工服务 4.复杂案例需要专业判断。转接时保留完整对话上下文。', kw: '转人工,人工,转接,什么时候' },
-      { cat: '性能指标', q: '系统的性能指标', a: '关键性能指标：响应时间<2秒，意图识别准确率≥95%，知识库回答准确率≥90%，用户满意度≥4.2/5，首次解决率≥85%，人工转接率≤15%，系统可用性99.9%。', kw: '性能,指标,响应时间,准确率,满意度' },
-      { cat: '安全要求', q: '系统有哪些安全要求', a: '安全要求包括：数据加密传输、访问控制、审计日志、患者数据匿名化、隐私保护（知情同意、数据保留策略、删除权）等，符合医疗数据保护规范。', kw: '安全,要求,加密,隐私,保护' },
-      { cat: '多渠道', q: '支持哪些接入渠道', a: '系统支持多渠道接入：Web聊天界面、移动应用、微信小程序、语音交互（ASR/TTS）。用户可通过多种方式访问智能客服服务。', kw: '渠道,接入,微信,小程序,语音,多渠道' },
-      { cat: '架构设计', q: '系统架构是怎样的', a: '系统采用分层架构：用户界面层、应用层（对话管理/会话/用户管理/路由）、AI引擎层（NLP/意图识别/实体提取/NLG）、知识库层（知识图谱/FAQ/文档检索）、数据层（用户数据/对话日志/分析/训练数据）。', kw: '架构,分层,设计,引擎' },
-      { cat: '项目管理', q: '项目的开发阶段', a: '开发分为四个阶段：阶段1-MVP（核心FAQ+症状检查，Web单渠道）阶段2-增强智能（多轮对话+知识图谱+扩展领域）阶段3-全面部署（多渠道+语音+高级分析+医院系统集成）阶段4-持续优化（持续学习+个性化+预测能力）', kw: '阶段,开发,计划,路线图' },
-      { cat: '风险控制', q: '有哪些风险和应对措施', a: '主要风险：1.医疗准确性-AI提供错误建议→应对：专家审核循环+置信度阈值+免责声明 2.法规合规→法律审查+适应性合规框架 3.用户信任→透明AI披露+便捷人工接入 4.知识维护→自动更新提醒+专家审核周期', kw: '风险,应对,措施,控制' },
-      { cat: '通用问答', q: '你好', a: '您好！我是智能客服助手，很高兴为您服务。您可以向我咨询关于系统功能、知识库、对话系统、人机协同等方面的问题。请问有什么可以帮您的？', kw: '你好,您好,hi,hello' },
-      { cat: '通用问答', q: '谢谢', a: '不客气！如果您还有其他问题，随时可以向我咨询。祝您使用愉快！', kw: '谢谢,感谢,thanks' },
-      { cat: '通用问答', q: '再见', a: '感谢您的使用，再见！如有需要随时回来咨询。', kw: '再见,拜拜,bye,goodbye' }
+  if (db.knowledge_points.length === 0) {
+    const points = [
+      { name: '函数基础', subject: '数学', difficulty: 1, prerequisites: '', description: '函数的定义、定义域、值域' },
+      { name: '一次函数', subject: '数学', difficulty: 2, prerequisites: '函数基础', description: '一次函数的图像与性质' },
+      { name: '二次函数', subject: '数学', difficulty: 3, prerequisites: '一次函数', description: '二次函数的图像、性质、应用' },
+      { name: '指数函数', subject: '数学', difficulty: 3, prerequisites: '函数基础', description: '指数函数的概念与性质' },
+      { name: '对数函数', subject: '数学', difficulty: 3, prerequisites: '指数函数', description: '对数函数的概念与性质' },
+      { name: '三角函数', subject: '数学', difficulty: 3, prerequisites: '函数基础', description: '正弦、余弦、正切函数' },
+      { name: '数列', subject: '数学', difficulty: 3, prerequisites: '函数基础', description: '等差数列、等比数列' },
+      { name: '不等式', subject: '数学', difficulty: 2, prerequisites: '函数基础', description: '基本不等式、线性规划' },
+      { name: '立体几何', subject: '数学', difficulty: 3, prerequisites: '', description: '空间几何体、点线面关系' },
+      { name: '解析几何', subject: '数学', difficulty: 4, prerequisites: '二次函数,三角函数', description: '圆锥曲线、直线与圆' },
+      { name: '导数', subject: '数学', difficulty: 4, prerequisites: '函数基础', description: '导数的概念与运算' },
+      { name: '积分', subject: '数学', difficulty: 4, prerequisites: '导数', description: '定积分与不定积分' },
+      { name: '概率统计', subject: '数学', difficulty: 2, prerequisites: '', description: '概率、统计、排列组合' },
+      { name: '向量', subject: '数学', difficulty: 2, prerequisites: '', description: '平面向量与空间向量' },
+      { name: '集合与逻辑', subject: '数学', difficulty: 1, prerequisites: '', description: '集合运算、命题、充要条件' }
     ];
-    for (const kb of kbs) {
-      db.knowledge_base.push({
-        id: nextId('knowledge_base'),
-        category: kb.cat,
-        question: kb.q,
-        answer: kb.a,
-        keywords: kb.kw,
+    for (const p of points) {
+      db.knowledge_points.push({
+        id: nextId('knowledge_points'),
+        ...p,
+        created_at: nowStr()
+      });
+    }
+  }
+
+  if (db.questions.length === 0) {
+    const questions = [
+      {
+        kp_id: 1, kp_name: '函数基础', difficulty: 1, type: 'single',
+        question: '函数 f(x) = √(x-1) 的定义域是？',
+        options: JSON.stringify(['A. x ≥ 1', 'B. x > 1', 'C. x ≥ 0', 'D. x > 0']),
+        answer: 'A',
+        analysis: '根号下的表达式必须大于等于0，即 x-1 ≥ 0，解得 x ≥ 1。'
+      },
+      {
+        kp_id: 1, kp_name: '函数基础', difficulty: 1, type: 'single',
+        question: '下列哪个是函数？',
+        options: JSON.stringify(['A. y² = x', 'B. y = x²', 'C. x² + y² = 1', 'D. |y| = x']),
+        answer: 'B',
+        analysis: '函数要求对于每个x值，有唯一确定的y值与之对应。只有y = x²满足这个条件。'
+      },
+      {
+        kp_id: 2, kp_name: '一次函数', difficulty: 2, type: 'single',
+        question: '一次函数 y = 2x + 3 的斜率是？',
+        options: JSON.stringify(['A. 2', 'B. 3', 'C. -2', 'D. -3']),
+        answer: 'A',
+        analysis: '一次函数的标准形式为 y = kx + b，其中 k 为斜率，b 为截距。所以斜率 k = 2。'
+      },
+      {
+        kp_id: 2, kp_name: '一次函数', difficulty: 2, type: 'single',
+        question: '直线 y = -x + 2 经过哪几个象限？',
+        options: JSON.stringify(['A. 一、二、三', 'B. 一、二、四', 'C. 一、三、四', 'D. 二、三、四']),
+        answer: 'B',
+        analysis: '斜率 k = -1 < 0，截距 b = 2 > 0，直线经过一、二、四象限。'
+      },
+      {
+        kp_id: 3, kp_name: '二次函数', difficulty: 3, type: 'single',
+        question: '二次函数 y = x² - 4x + 3 的顶点坐标是？',
+        options: JSON.stringify(['A. (2, -1)', 'B. (2, 1)', 'C. (-2, -1)', 'D. (-2, 1)']),
+        answer: 'A',
+        analysis: '配方得 y = (x-2)² - 1，顶点坐标为 (2, -1)。顶点公式：(-b/2a, f(-b/2a))。'
+      },
+      {
+        kp_id: 3, kp_name: '二次函数', difficulty: 3, type: 'single',
+        question: '方程 x² - 5x + 6 = 0 的两根分别是？',
+        options: JSON.stringify(['A. 2和3', 'B. -2和-3', 'C. 1和6', 'D. -1和-6']),
+        answer: 'A',
+        analysis: '因式分解：(x-2)(x-3) = 0，解得 x = 2 或 x = 3。也可用求根公式验证。'
+      },
+      {
+        kp_id: 3, kp_name: '二次函数', difficulty: 3, type: 'single',
+        question: '二次函数 y = -x² + 2x + 3 的最大值是？',
+        options: JSON.stringify(['A. 3', 'B. 4', 'C. 2', 'D. 5']),
+        answer: 'B',
+        analysis: '配方得 y = -(x-1)² + 4，开口向下，顶点为最大值点，最大值为 4。'
+      },
+      {
+        kp_id: 4, kp_name: '指数函数', difficulty: 3, type: 'single',
+        question: '若 2^x = 8，则 x = ?',
+        options: JSON.stringify(['A. 2', 'B. 3', 'C. 4', 'D. 8']),
+        answer: 'B',
+        analysis: '8 = 2³，所以 2^x = 2³，x = 3。'
+      },
+      {
+        kp_id: 4, kp_name: '指数函数', difficulty: 3, type: 'single',
+        question: '函数 y = 2^(-x) 的图像是？',
+        options: JSON.stringify(['A. 递增', 'B. 递减', 'C. 先增后减', 'D. 先减后增']),
+        answer: 'B',
+        analysis: 'y = 2^(-x) = (1/2)^x，底数 1/2 在 (0,1) 之间，所以是递减函数。'
+      },
+      {
+        kp_id: 5, kp_name: '对数函数', difficulty: 3, type: 'single',
+        question: 'log₂8 = ?',
+        options: JSON.stringify(['A. 2', 'B. 3', 'C. 4', 'D. 8']),
+        answer: 'B',
+        analysis: '设 log₂8 = x，则 2^x = 8 = 2³，所以 x = 3。'
+      },
+      {
+        kp_id: 5, kp_name: '对数函数', difficulty: 3, type: 'single',
+        question: 'lg100 = ?',
+        options: JSON.stringify(['A. 1', 'B. 2', 'C. 10', 'D. 100']),
+        answer: 'B',
+        analysis: 'lg 是以 10 为底的对数，lg100 = log₁₀100 = 2，因为 10² = 100。'
+      },
+      {
+        kp_id: 6, kp_name: '三角函数', difficulty: 3, type: 'single',
+        question: 'sin30° = ?',
+        options: JSON.stringify(['A. 1/2', 'B. √2/2', 'C. √3/2', 'D. 1']),
+        answer: 'A',
+        analysis: 'sin30° = 1/2 是特殊角的三角函数值，需要记住。'
+      },
+      {
+        kp_id: 6, kp_name: '三角函数', difficulty: 3, type: 'single',
+        question: 'cos60° = ?',
+        options: JSON.stringify(['A. 1/2', 'B. √2/2', 'C. √3/2', 'D. 1']),
+        answer: 'A',
+        analysis: 'cos60° = 1/2 是特殊角的三角函数值。'
+      },
+      {
+        kp_id: 7, kp_name: '数列', difficulty: 3, type: 'single',
+        question: '等差数列 2, 5, 8, 11, ... 的第10项是？',
+        options: JSON.stringify(['A. 29', 'B. 32', 'C. 26', 'D. 35']),
+        answer: 'A',
+        analysis: '首项 a₁ = 2，公差 d = 3。aₙ = a₁ + (n-1)d = 2 + 9×3 = 29。'
+      },
+      {
+        kp_id: 7, kp_name: '数列', difficulty: 3, type: 'single',
+        question: '等比数列 1, 2, 4, 8, ... 的公比是？',
+        options: JSON.stringify(['A. 1', 'B. 2', 'C. 3', 'D. 4']),
+        answer: 'B',
+        analysis: '公比 q = a₂/a₁ = 2/1 = 2。'
+      },
+      {
+        kp_id: 8, kp_name: '不等式', difficulty: 2, type: 'single',
+        question: '若 a > 0，b > 0，则 a + b ≥ 2√(ab) 等号成立条件是？',
+        options: JSON.stringify(['A. a = b', 'B. a > b', 'C. a < b', 'D. ab = 1']),
+        answer: 'A',
+        analysis: '基本不等式 a + b ≥ 2√(ab)，等号成立当且仅当 a = b。'
+      },
+      {
+        kp_id: 9, kp_name: '立体几何', difficulty: 3, type: 'single',
+        question: '正方体的体对角线长与棱长的比是？',
+        options: JSON.stringify(['A. √2', 'B. √3', 'C. 2', 'D. 3']),
+        answer: 'B',
+        analysis: '设棱长为 a，则面对角线为 a√2，体对角线为 √(a² + 2a²) = a√3。比值为 √3。'
+      },
+      {
+        kp_id: 10, kp_name: '解析几何', difficulty: 4, type: 'single',
+        question: '椭圆 x²/9 + y²/4 = 1 的离心率是？',
+        options: JSON.stringify(['A. √5/3', 'B. 2/3', 'C. √5/2', 'D. 3/5']),
+        answer: 'A',
+        analysis: 'a² = 9, b² = 4, c² = a² - b² = 5, c = √5。离心率 e = c/a = √5/3。'
+      },
+      {
+        kp_id: 11, kp_name: '导数', difficulty: 4, type: 'single',
+        question: '函数 f(x) = x³ 的导数 f\'(x) = ?',
+        options: JSON.stringify(['A. 3x²', 'B. x²', 'C. 3x', 'D. x³']),
+        answer: 'A',
+        analysis: '幂函数求导公式：(xⁿ)\' = nxⁿ⁻¹。(x³)\' = 3x²。'
+      },
+      {
+        kp_id: 13, kp_name: '概率统计', difficulty: 2, type: 'single',
+        question: '掷一枚均匀硬币，正面朝上的概率是？',
+        options: JSON.stringify(['A. 1/4', 'B. 1/3', 'C. 1/2', 'D. 1']),
+        answer: 'C',
+        analysis: '均匀硬币有两个等可能结果，正面朝上是其中一种，概率为 1/2。'
+      },
+      {
+        kp_id: 14, kp_name: '向量', difficulty: 2, type: 'single',
+        question: '向量 a = (1, 2) 的模是？',
+        options: JSON.stringify(['A. 3', 'B. √5', 'C. 5', 'D. √3']),
+        answer: 'B',
+        analysis: '向量的模 |a| = √(x² + y²) = √(1 + 4) = √5。'
+      },
+      {
+        kp_id: 15, kp_name: '集合与逻辑', difficulty: 1, type: 'single',
+        question: '集合 A = {1,2,3}，B = {2,3,4}，A ∩ B = ?',
+        options: JSON.stringify(['A. {1,2,3,4}', 'B. {2,3}', 'C. {1,4}', 'D. {1,2,3}']),
+        answer: 'B',
+        analysis: '交集是两个集合共有的元素，A 和 B 共有的元素是 2 和 3。'
+      }
+    ];
+    for (const q of questions) {
+      db.questions.push({
+        id: nextId('questions'),
+        ...q,
+        created_by: 'system',
         created_at: nowStr()
       });
     }
@@ -355,8 +538,30 @@ function ensureDefaultData() {
   saveNow();
 }
 
+function ensureSystemConfig() {
+  if (db.system_config.length === 0) {
+    db.system_config.push({
+      id: 1,
+      ai_model: 'gpt-4o-mini',
+      api_base: '',
+      api_key: '',
+      context_length: 4000,
+      safety_filter: 1,
+      welcome_message: '欢迎使用AI个性化学习诊断辅导系统！'
+    });
+    saveNow();
+  }
+}
+
+ensureSystemConfig();
 ensureDefaultData();
 
 module.exports = dbWrapper;
 module.exports._raw = db;
 module.exports._saveNow = saveNow;
+module.exports._nowStr = nowStr;
+module.exports._insert = insert;
+module.exports._update = update;
+module.exports._delete = del;
+module.exports._where = where;
+module.exports._nextId = nextId;
