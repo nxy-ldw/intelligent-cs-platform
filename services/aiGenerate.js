@@ -30,6 +30,12 @@ function callApi(apiConfig, messages) {
 
     if (apiConfig.provider === 'gemini') {
       headers['x-goog-api-key'] = apiConfig.api_key;
+    } else if (apiConfig.provider === 'zhipu') {
+      headers['Authorization'] = 'Bearer ' + apiConfig.api_key;
+    } else if (apiConfig.provider === 'baidu') {
+      headers['Authorization'] = 'Bearer ' + apiConfig.api_key;
+    } else if (apiConfig.provider === 'tencent') {
+      headers['Authorization'] = 'Bearer ' + apiConfig.api_key;
     } else if (apiConfig.provider === 'openrouter') {
       headers['Authorization'] = 'Bearer ' + apiConfig.api_key;
       headers['HTTP-Referer'] = 'https://edu.example.com';
@@ -154,7 +160,7 @@ function parseQuestions(content) {
 async function generateQuestions(params) {
   var api = getDefaultApi();
   if (!api) throw new Error('没有可用的AI API，请在管理后台配置');
-  if (!api.api_key) throw new Error('当前AI API未设置API Key，请管理员在后台配置。免费的Google Gemini API Key可在 https://ai.google.dev/ 免费获取');
+  if (!api.api_key) throw new Error('当前AI API未设置API Key，请管理员在后台配置。推荐的免费API：智谱GLM(https://open.bigmodel.cn/) 或 DeepSeek(https://platform.deepseek.com/)');
 
   var messages = buildPrompt(params);
   var content = await callApi(api, messages);

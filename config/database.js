@@ -875,33 +875,57 @@ function ensureSystemConfig() {
   if (db.ai_apis.length === 0) {
     db.ai_apis.push(
       {
-        id: nextId('ai_apis'), name: 'Google Gemini (免费)', provider: 'gemini',
-        api_url: 'https://generativelanguage.googleapis.com/v1beta/chat/completions',
-        api_key: '', model: 'gemini-2.0-flash',
+        id: nextId('ai_apis'), name: '智谱GLM-4-Flash (永久免费)', provider: 'zhipu',
+        api_url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+        api_key: '', model: 'glm-4-flash',
         is_free: 1, is_active: 1, is_default: 1,
         max_tokens: 2048, temperature: 0.7,
         created_at: nowStr()
       },
       {
-        id: nextId('ai_apis'), name: 'Groq (免费)', provider: 'groq',
-        api_url: 'https://api.groq.com/openai/v1/chat/completions',
-        api_key: '', model: 'llama-3.3-70b-versatile',
+        id: nextId('ai_apis'), name: 'DeepSeek (免费额度)', provider: 'deepseek',
+        api_url: 'https://api.deepseek.com/v1/chat/completions',
+        api_key: '', model: 'deepseek-chat',
         is_free: 1, is_active: 1, is_default: 0,
         max_tokens: 2048, temperature: 0.7,
         created_at: nowStr()
       },
       {
-        id: nextId('ai_apis'), name: 'DeepSeek (免费)', provider: 'deepseek',
-        api_url: 'https://api.deepseek.com/v1/chat/completions',
-        api_key: '', model: 'deepseek-chat',
+        id: nextId('ai_apis'), name: '阿里通义千问 (免费)', provider: 'qwen',
+        api_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        api_key: '', model: 'qwen-turbo',
         is_free: 1, is_active: 0, is_default: 0,
         max_tokens: 2048, temperature: 0.7,
         created_at: nowStr()
       },
       {
-        id: nextId('ai_apis'), name: 'OpenRouter (免费)', provider: 'openrouter',
-        api_url: 'https://openrouter.ai/api/v1/chat/completions',
-        api_key: '', model: 'google/gemini-2.0-flash-exp:free',
+        id: nextId('ai_apis'), name: '百度ERNIE-Speed (永久免费)', provider: 'baidu',
+        api_url: 'https://qianfan.baidubce.com/v2/chat/completions',
+        api_key: '', model: 'ernie-speed-128k',
+        is_free: 1, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: '腾讯混元-lite (永久免费)', provider: 'tencent',
+        api_url: 'https://api.hunyuan.cloud.tencent.com/v1/chat/completions',
+        api_key: '', model: 'hunyuan-lite',
+        is_free: 1, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: 'Moonshot Kimi (免费额度)', provider: 'moonshot',
+        api_url: 'https://api.moonshot.cn/v1/chat/completions',
+        api_key: '', model: 'moonshot-v1-8k',
+        is_free: 1, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: 'Google Gemini (免费)', provider: 'gemini',
+        api_url: 'https://generativelanguage.googleapis.com/v1beta/chat/completions',
+        api_key: '', model: 'gemini-2.0-flash',
         is_free: 1, is_active: 0, is_default: 0,
         max_tokens: 2048, temperature: 0.7,
         created_at: nowStr()
