@@ -206,6 +206,9 @@
           <div class="nav-item" onclick="switchSection('questions', this)">
             <span class="nav-icon">&#128221;</span><span>题库管理</span>
           </div>
+          <div class="nav-item" onclick="switchSection('ai-generate', this)">
+            <span class="nav-icon">&#10024;</span><span>AI出题</span>
+          </div>
           <div class="nav-item" onclick="switchSection('knowledgePoints', this)">
             <span class="nav-icon">&#129504;</span><span>知识点管理</span>
           </div>
@@ -315,6 +318,82 @@
           </div>
         </div>
       </div>
+
+      <section id="ai-generate" class="content-section">
+        <h1 class="page-title">AI 智能出题</h1>
+        <div style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(6,182,212,0.04)); border-radius: 12px; padding: 24px; margin-bottom: 20px;">
+          <p style="color: var(--text-light); font-size: 13px; margin-bottom: 16px;">选择年级、科目、教材版本、课程和知识点，AI 自动生成对应题目并加入题库。</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">年级段</label>
+              <select id="aiGradeLevel" class="form-select" onchange="loadAiCourses()">
+                <option value="">选择年级</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">科目</label>
+              <select id="aiSubject" class="form-select" onchange="loadAiTextbookVersions(); loadAiCourses()">
+                <option value="">选择科目</option>
+                <option value="数学">数学</option>
+                <option value="物理">物理</option>
+                <option value="化学">化学</option>
+                <option value="语文">语文</option>
+                <option value="英语">英语</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">教材版本</label>
+              <select id="aiTextbookVersion" class="form-select">
+                <option value="">选择版本</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">课程</label>
+              <select id="aiCourse" class="form-select">
+                <option value="">选择课程</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-top: 16px;">
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">知识点（选填）</label>
+              <input type="text" id="aiKnowledgePoint" class="form-input" placeholder="如：一元二次方程">
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">题型</label>
+              <select id="aiQuestionType" class="form-select">
+                <option value="single">单选题</option>
+                <option value="multi">多选题</option>
+                <option value="fill">填空题</option>
+                <option value="judge">判断题</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">难度（1-5）</label>
+              <select id="aiDifficulty" class="form-select">
+                <option value="1">1-简单</option>
+                <option value="2">2-较易</option>
+                <option value="3" selected>3-中等</option>
+                <option value="4">4-较难</option>
+                <option value="5">5-困难</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; color:var(--text-light); margin-bottom:6px;">生成数量</label>
+              <select id="aiCount" class="form-select">
+                <option value="1">1题</option>
+                <option value="3">3题</option>
+                <option value="5">5题</option>
+                <option value="10">10题</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 20px;">
+            <button class="btn btn-primary" onclick="generateAiQuestions()" id="aiGenerateBtn">&#10024; AI 生成题目</button>
+          </div>
+          <div id="aiGenResult" style="margin-top: 20px;"></div>
+        </div>
+      </section>
 
       <div id="knowledgePoints" class="content-section">
         <div class="page-header">
@@ -700,6 +779,7 @@
       if (name === 'classes') loadClasses();
       else if (name === 'students') { loadStudentFilters(); loadStudents(); }
       else if (name === 'questions') { loadQuestionFilters(); loadQuestions(); }
+      else if (name === 'ai-generate') loadAiGradeLevels();
       else if (name === 'knowledgePoints') loadKnowledgePoints();
       else if (name === 'tasks') loadTasks();
       else if (name === 'diagnosis') loadDiagnosisFilters();
@@ -1320,6 +1400,130 @@
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmPassword').value = '';
       } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== AI Question Generation =====
+    async function loadAiGradeLevels() {
+      var select = document.getElementById('aiGradeLevel');
+      if (!select) return;
+      try {
+        var data = await apiCall('/api/teacher/grade-levels');
+        var levels = data.gradeLevels || data.levels || [];
+        select.innerHTML = '<option value="">选择年级</option>';
+        levels.forEach(function(g) {
+          var val = typeof g === 'string' ? g : (g.value || g.id || g.name);
+          var label = typeof g === 'string' ? g : (g.label || g.name || g.value);
+          select.innerHTML += '<option value="' + escapeHtml(val) + '">' + escapeHtml(label) + '</option>';
+        });
+      } catch (err) {
+        select.innerHTML = '<option value="">选择年级</option>';
+        showToast('加载年级失败: ' + err.message, 'error');
+      }
+    }
+
+    async function loadAiTextbookVersions() {
+      var select = document.getElementById('aiTextbookVersion');
+      if (!select) return;
+      var subject = document.getElementById('aiSubject').value;
+      select.innerHTML = '<option value="">选择版本</option>';
+      if (!subject) return;
+      try {
+        var data = await apiCall('/api/teacher/textbook-versions?subject=' + encodeURIComponent(subject));
+        var versions = data.versions || data.textbookVersions || [];
+        versions.forEach(function(v) {
+          var val = typeof v === 'string' ? v : (v.value || v.id || v.name);
+          var label = typeof v === 'string' ? v : (v.label || v.name || v.value);
+          select.innerHTML += '<option value="' + escapeHtml(val) + '">' + escapeHtml(label) + '</option>';
+        });
+      } catch (err) {
+        showToast('加载教材版本失败: ' + err.message, 'error');
+      }
+    }
+
+    async function loadAiCourses() {
+      var select = document.getElementById('aiCourse');
+      if (!select) return;
+      var subject = document.getElementById('aiSubject').value;
+      var grade = document.getElementById('aiGradeLevel').value;
+      select.innerHTML = '<option value="">选择课程</option>';
+      if (!subject || !grade) return;
+      try {
+        var data = await apiCall('/api/teacher/courses?subject=' + encodeURIComponent(subject) + '&grade=' + encodeURIComponent(grade));
+        var courses = data.courses || [];
+        courses.forEach(function(c) {
+          var val = typeof c === 'string' ? c : (c.value || c.id || c.name);
+          var label = typeof c === 'string' ? c : (c.label || c.name || c.title || c.value);
+          select.innerHTML += '<option value="' + escapeHtml(val) + '">' + escapeHtml(label) + '</option>';
+        });
+      } catch (err) {
+        showToast('加载课程失败: ' + err.message, 'error');
+      }
+    }
+
+    async function generateAiQuestions() {
+      var btn = document.getElementById('aiGenerateBtn');
+      var resultDiv = document.getElementById('aiGenResult');
+      var subject = document.getElementById('aiSubject').value;
+      var grade = document.getElementById('aiGradeLevel').value;
+      if (!subject) { showToast('请选择科目', 'warning'); return; }
+      if (!grade) { showToast('请选择年级', 'warning'); return; }
+      var payload = {
+        subject: subject,
+        grade: grade,
+        textbookVersion: document.getElementById('aiTextbookVersion').value,
+        course: document.getElementById('aiCourse').value,
+        knowledgePoint: document.getElementById('aiKnowledgePoint').value.trim(),
+        questionType: document.getElementById('aiQuestionType').value,
+        difficulty: parseInt(document.getElementById('aiDifficulty').value),
+        count: parseInt(document.getElementById('aiCount').value)
+      };
+      btn.disabled = true;
+      btn.innerHTML = '生成中...';
+      resultDiv.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light);"><span style="font-size:14px;">AI 正在生成题目，请稍候...</span></div>';
+      try {
+        var data = await apiCall('/api/teacher/ai-generate', 'POST', payload);
+        var questions = data.questions || [];
+        var apiUsed = data.api || data.apiUsed || data.provider || '未知';
+        var html = '<div class="card"><div class="card-header"><h2 class="card-title">生成结果</h2></div><div class="card-body">';
+        html += '<div style="margin-bottom:16px;padding:12px;background:var(--gradient-card);border-radius:8px;font-size:13px;color:var(--text-medium);">';
+        html += '成功生成 <strong style="color:var(--success);">' + questions.length + '</strong> 道题目，使用 API：<strong>' + escapeHtml(apiUsed) + '</strong>';
+        html += '</div>';
+        if (questions.length > 0) {
+          html += '<div style="display:grid;gap:12px;">';
+          questions.forEach(function(q, idx) {
+            html += '<div style="border:1px solid var(--border-color);border-radius:8px;padding:14px;">';
+            html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">';
+            html += '<span style="font-size:13px;font-weight:700;color:var(--primary);">题目 ' + (idx + 1) + '</span>';
+            html += '<span class="kp-tag">' + escapeHtml(q.question_type || q.type || payload.questionType) + ' · 难度' + (q.difficulty || payload.difficulty) + '</span>';
+            html += '</div>';
+            html += '<div style="font-size:14px;color:var(--text-dark);margin-bottom:8px;">' + escapeHtml(q.question || q.content || '') + '</div>';
+            if (q.options) {
+              var opts = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+              if (Array.isArray(opts)) {
+                opts.forEach(function(opt, oi) {
+                  var optLabel = typeof opt === 'string' ? String.fromCharCode(65 + oi) + '. ' + opt : (opt.label || opt.key || '') + '. ' + (opt.value || opt.text || '');
+                  html += '<div style="font-size:13px;color:var(--text-medium);padding:2px 0;">' + escapeHtml(optLabel) + '</div>';
+                });
+              }
+            }
+            html += '<div style="font-size:12px;color:var(--text-light);margin-top:8px;">正确答案：<strong style="color:var(--success);">' + escapeHtml(q.answer || '') + '</strong></div>';
+            if (q.explanation) {
+              html += '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">解析：' + escapeHtml(q.explanation) + '</div>';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+        html += '</div></div>';
+        resultDiv.innerHTML = html;
+        showToast('成功生成 ' + questions.length + ' 道题目', 'success');
+      } catch (err) {
+        resultDiv.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">&#9888;</div><div class="empty-text">生成失败</div><div class="empty-desc">' + escapeHtml(err.message) + '</div></div></div>';
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#10024; AI 生成题目';
+      }
     }
 
     // ===== Init =====

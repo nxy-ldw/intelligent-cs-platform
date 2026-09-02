@@ -453,6 +453,9 @@
           <div class="nav-item" onclick="switchSection('config', this)">
             <span class="nav-icon">&#9881;</span><span>系统配置</span>
           </div>
+          <div class="nav-item" onclick="switchSection('ai-config', this)">
+            <span class="nav-icon">&#129302;</span><span>AI配置</span>
+          </div>
           <div class="nav-item" onclick="switchSection('logs', this)">
             <span class="nav-icon">&#128203;</span><span>操作日志</span>
           </div>
@@ -462,7 +465,7 @@
         </div>
       </nav>
       <div class="sidebar-footer">
-        <div class="sidebar-user" onclick="switchSection('profile', document.querySelectorAll('.nav-item')[6])">
+        <div class="sidebar-user" onclick="switchSection('profile', document.querySelectorAll('.nav-item')[7])">
           <div class="avatar" id="sidebarAvatar">A</div>
           <div class="user-info">
             <div class="user-name" id="sidebarUsername">管理员</div>
@@ -661,6 +664,22 @@
             </div>
             <button class="btn btn-primary" onclick="saveConfig()"><span>&#128190;</span> 保存配置</button>
           </div>
+        </section>
+        <!-- AI配置 -->
+        <section id="ai-config" class="content-section">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">AI API 配置</h1>
+              <p class="page-subtitle">管理AI大模型API接口</p>
+            </div>
+            <button class="btn btn-primary" onclick="showApiEditModal()"><span>&#10133;</span> 添加API</button>
+          </div>
+          <div class="info-banner" style="background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(6,182,212,0.05)); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="color: var(--primary); margin-bottom: 8px;">AI题目生成服务</h3>
+            <p style="color: var(--text-light); font-size: 13px;">配置AI API后，教师和学生可使用AI按年级、科目、教材版本、课程自动生成题目。</p>
+            <p style="color: var(--text-light); font-size: 12px; margin-top: 8px;">免费API Key获取：Google Gemini(<a href="https://ai.google.dev/" target="_blank" style="color: var(--primary);">ai.google.dev</a>) | Groq(<a href="https://console.groq.com/" target="_blank" style="color: var(--primary);">console.groq.com</a>)</p>
+          </div>
+          <div id="aiApiList"></div>
         </section>
         <!-- 操作日志 -->
         <section id="logs" class="content-section">
@@ -906,6 +925,76 @@
       </div>
     </div>
   </div>
+  <!-- AI API编辑弹窗 -->
+  <div class="modal-overlay" id="apiEditModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title" id="apiModalTitle">编辑AI API</h2>
+        <button class="modal-close" onclick="closeModal('apiEditModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">名称 <span style="color:var(--danger)">*</span></label>
+          <input type="text" class="form-control" id="apiName" placeholder="如：Google Gemini">
+        </div>
+        <div class="form-group">
+          <label class="form-label">API URL</label>
+          <input type="text" class="form-control" id="apiUrl" placeholder="https://generativelanguage.googleapis.com/v1beta">
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input type="password" class="form-control" id="apiKey" placeholder="sk-..." autocomplete="off">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">模型名称</label>
+            <input type="text" class="form-control" id="apiModel" placeholder="如：gemini-1.5-flash">
+          </div>
+          <div class="form-group">
+            <label class="form-label">提供商</label>
+            <input type="text" class="form-control" id="apiProvider" placeholder="如：Google">
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">最大Token数</label>
+            <input type="number" class="form-control" id="apiMaxTokens" placeholder="4096">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Temperature</label>
+            <input type="number" class="form-control" id="apiTemperature" placeholder="0.7" step="0.1" min="0" max="2">
+          </div>
+          <div class="form-group">
+            <label class="form-label">是否启用</label>
+            <select class="form-control" id="apiActive">
+              <option value="1">启用</option>
+              <option value="0">禁用</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">是否免费</label>
+            <select class="form-control" id="apiIsFree">
+              <option value="0">付费</option>
+              <option value="1">免费</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">是否默认</label>
+            <select class="form-control" id="apiIsDefault">
+              <option value="0">否</option>
+              <option value="1">是</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('apiEditModal')">取消</button>
+        <button class="btn btn-primary" onclick="saveApiConfig()">保存</button>
+      </div>
+    </div>
+  </div>
   <script>
     // ============ API 工具 ============
     const API = {
@@ -1018,6 +1107,7 @@
       questions: '题库管理',
       knowledge: '知识点管理',
       config: '系统配置',
+      'ai-config': 'AI配置',
       logs: '操作日志',
       profile: '个人中心'
     };
@@ -1041,6 +1131,7 @@
       if (sectionId === 'questions') { loadKpOptions(); loadQuestions(); }
       if (sectionId === 'knowledge') loadKnowledgePoints();
       if (sectionId === 'config') loadConfig();
+      if (sectionId === 'ai-config') loadAiApis();
       if (sectionId === 'logs') loadAdminLogs();
     }
 
@@ -1701,6 +1792,145 @@
         setTimeout(function() { logout(); }, 1500);
       } catch (err) {
         showToast('修改失败: ' + err.message, 'error');
+      }
+    }
+
+    // ============ AI API 配置 ============
+    var editingApiId = null;
+
+    async function loadAiApis() {
+      try {
+        var data = await API.get('/api/admin/ai-apis');
+        var apis = data.apis || data.data || [];
+        var list = document.getElementById('aiApiList');
+        if (apis.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-light);">暂无AI API配置，请点击"添加API"按钮添加</div>';
+          return;
+        }
+        var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;">';
+        for (var i = 0; i < apis.length; i++) {
+          var api = apis[i];
+          var freeBadge = api.is_free ? '<span class="badge badge-success">免费</span>' : '<span class="badge badge-warning">付费</span>';
+          var keyBadge = api.api_key ? '<span class="badge badge-info">已配置Key</span>' : '<span class="badge badge-danger">未配置Key</span>';
+          var defaultBadge = api.is_default ? '<span class="badge badge-primary">默认</span>' : '';
+          var activeClass = api.is_active ? 'active' : '';
+          html += '<div class="stat-card blue" style="cursor:default;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
+              '<div><div class="stat-icon">&#129302;</div>' +
+              '<strong style="font-size:18px;color:var(--text-dark);">' + escapeHtml(api.name || '-') + '</strong></div>' +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:160px;">' + freeBadge + keyBadge + defaultBadge + '</div>' +
+            '</div>' +
+            '<div style="font-size:13px;color:var(--text-light);margin-top:8px;line-height:1.8;">' +
+              '<div>提供商：<span style="color:var(--text-medium);">' + escapeHtml(api.provider || '-') + '</span></div>' +
+              '<div>模型：<span style="color:var(--text-medium);">' + escapeHtml(api.model || '未设置') + '</span></div>' +
+              '<div>最大Token：<span style="color:var(--text-medium);">' + (api.max_tokens || '-') + '</span></div>' +
+              '<div>Temperature：<span style="color:var(--text-medium);">' + (api.temperature != null ? api.temperature : '-') + '</span></div>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border-color);">' +
+              '<div style="display:flex;align-items:center;gap:10px;">' +
+                '<div class="toggle-switch ' + activeClass + '" onclick="toggleApiActive(' + api.id + ', ' + (api.is_active ? 0 : 1) + ')"></div>' +
+                '<span style="font-size:13px;font-weight:500;color:var(--text-medium);">' + (api.is_active ? '已启用' : '已禁用') + '</span>' +
+              '</div>' +
+              '<div class="action-group">' +
+                (api.is_default ? '' : '<button class="btn btn-info btn-sm" onclick="setDefaultApi(' + api.id + ')">设为默认</button>') +
+                '<button class="btn btn-secondary btn-sm" onclick="showApiEditModal(' + api.id + ')">编辑</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }
+        html += '</div>';
+        list.innerHTML = html;
+      } catch (err) {
+        showToast('加载AI API列表失败: ' + err.message, 'error');
+      }
+    }
+
+    function showApiEditModal(id) {
+      editingApiId = id || null;
+      document.getElementById('apiModalTitle').textContent = id ? '编辑AI API' : '添加AI API';
+      if (id) {
+        API.get('/api/admin/ai-apis').then(function(data) {
+          var apis = data.apis || data.data || [];
+          var api = apis.find(function(a) { return a.id === id; });
+          if (api) {
+            document.getElementById('apiName').value = api.name || '';
+            document.getElementById('apiUrl').value = api.api_url || '';
+            document.getElementById('apiKey').value = api.api_key || '';
+            document.getElementById('apiKey').placeholder = api.api_key ? '已配置（不修改请留空）' : 'sk-...';
+            document.getElementById('apiModel').value = api.model || '';
+            document.getElementById('apiProvider').value = api.provider || '';
+            document.getElementById('apiMaxTokens').value = api.max_tokens || '';
+            document.getElementById('apiTemperature').value = api.temperature != null ? api.temperature : '';
+            document.getElementById('apiActive').value = api.is_active ? '1' : '0';
+            document.getElementById('apiIsFree').value = api.is_free ? '1' : '0';
+            document.getElementById('apiIsDefault').value = api.is_default ? '1' : '0';
+          }
+        });
+      } else {
+        document.getElementById('apiName').value = '';
+        document.getElementById('apiUrl').value = '';
+        document.getElementById('apiKey').value = '';
+        document.getElementById('apiKey').placeholder = 'sk-...';
+        document.getElementById('apiModel').value = '';
+        document.getElementById('apiProvider').value = '';
+        document.getElementById('apiMaxTokens').value = '';
+        document.getElementById('apiTemperature').value = '';
+        document.getElementById('apiActive').value = '1';
+        document.getElementById('apiIsFree').value = '0';
+        document.getElementById('apiIsDefault').value = '0';
+      }
+      document.getElementById('apiEditModal').classList.add('active');
+    }
+
+    async function saveApiConfig() {
+      var name = document.getElementById('apiName').value.trim();
+      if (!name) { showToast('请输入名称', 'warning'); return; }
+      var body = {
+        name: name,
+        api_url: document.getElementById('apiUrl').value.trim(),
+        api_key: document.getElementById('apiKey').value.trim(),
+        model: document.getElementById('apiModel').value.trim(),
+        provider: document.getElementById('apiProvider').value.trim(),
+        max_tokens: parseInt(document.getElementById('apiMaxTokens').value) || 4096,
+        temperature: parseFloat(document.getElementById('apiTemperature').value) || 0.7,
+        is_active: parseInt(document.getElementById('apiActive').value),
+        is_free: parseInt(document.getElementById('apiIsFree').value),
+        is_default: parseInt(document.getElementById('apiIsDefault').value)
+      };
+      try {
+        if (editingApiId) {
+          await API.put('/api/admin/ai-apis/' + editingApiId, body);
+          showToast('AI API配置保存成功', 'success');
+        } else {
+          await API.post('/api/admin/ai-apis', body);
+          showToast('AI API添加成功', 'success');
+        }
+        closeModal('apiEditModal');
+        loadAiApis();
+      } catch (err) {
+        showToast('保存失败: ' + err.message, 'error');
+      }
+    }
+
+    async function toggleApiActive(id, active) {
+      try {
+        await API.put('/api/admin/ai-apis/' + id, { is_active: active });
+        showToast(active ? 'API已启用' : 'API已禁用', 'success');
+        loadAiApis();
+      } catch (err) {
+        showToast('操作失败: ' + err.message, 'error');
+        loadAiApis();
+      }
+    }
+
+    async function setDefaultApi(id) {
+      if (!confirm('确定将该API设为默认吗？')) return;
+      try {
+        await API.put('/api/admin/ai-apis/' + id, { is_default: 1 });
+        showToast('已设为默认API', 'success');
+        loadAiApis();
+      } catch (err) {
+        showToast('设置失败: ' + err.message, 'error');
       }
     }
   </script>

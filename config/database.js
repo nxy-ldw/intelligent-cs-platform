@@ -31,13 +31,18 @@ let db = {
   chat_messages: [],
   chat_settings: [],
   chat_announcements: [],
+  ai_apis: [],
+  grade_levels: [],
+  textbook_versions: [],
+  courses: [],
   _seq: {
     users: 0, classes: 0, announcements: 0, student_logs: 0,
     knowledge_points: 0, questions: 0, tasks: 0, task_questions: 0,
     answers: 0, wrong_questions: 0, diagnosis_reports: 0,
     notifications: 0, operation_logs: 0, admin_logs: 0,
     system_config: 0, chat_groups: 0, chat_members: 0,
-    chat_messages: 0, chat_settings: 0, chat_announcements: 0
+    chat_messages: 0, chat_settings: 0, chat_announcements: 0,
+    ai_apis: 0, grade_levels: 0, textbook_versions: 0, courses: 0
   }
 };
 
@@ -50,7 +55,7 @@ function load() {
         'knowledge_points', 'questions', 'tasks', 'task_questions', 'answers',
         'wrong_questions', 'diagnosis_reports', 'notifications', 'operation_logs',
         'admin_logs', 'system_config', 'chat_groups', 'chat_members', 'chat_messages',
-        'chat_settings', 'chat_announcements'];
+        'chat_settings', 'chat_announcements', 'ai_apis', 'grade_levels', 'textbook_versions', 'courses'];
       for (const t of defaults) { if (!db[t]) db[t] = []; }
       if (!db._seq) db._seq = {};
       for (const t of defaults) { if (db._seq[t] === undefined) db._seq[t] = 0; }
@@ -799,6 +804,116 @@ function ensureSystemConfig() {
       xkw_api_key: '',
       zyb_api_key: ''
     });
+    saveNow();
+  }
+
+  if (db.grade_levels.length === 0) {
+    var levels = [
+      { name: '高一', sort: 1 }, { name: '高二', sort: 2 }, { name: '高三', sort: 3 },
+      { name: '大一', sort: 4 }, { name: '大二', sort: 5 }, { name: '大三', sort: 6 },
+      { name: '大四', sort: 7 }
+    ];
+    levels.forEach(function(l) {
+      db.grade_levels.push({ id: nextId('grade_levels'), name: l.name, sort: l.sort, created_at: nowStr() });
+    });
+  }
+
+  if (db.textbook_versions.length === 0) {
+    var versions = [
+      { name: '人教A版', subject: '数学' }, { name: '人教B版', subject: '数学' },
+      { name: '北师大版', subject: '数学' }, { name: '苏教版', subject: '数学' },
+      { name: '沪教版', subject: '数学' }, { name: '同济版', subject: '数学' },
+      { name: '人教版', subject: '物理' }, { name: '教科版', subject: '物理' },
+      { name: '人教版', subject: '化学' }, { name: '鲁科版', subject: '化学' },
+      { name: '人教版', subject: '语文' }, { name: '苏教版', subject: '语文' },
+      { name: '人教版', subject: '英语' }, { name: '外研版', subject: '英语' },
+      { name: '同济大学版', subject: '高等数学' }, { name: '清华大学版', subject: '高等数学' }
+    ];
+    versions.forEach(function(v) {
+      db.textbook_versions.push({ id: nextId('textbook_versions'), name: v.name, subject: v.subject, created_at: nowStr() });
+    });
+  }
+
+  if (db.courses.length === 0) {
+    var courses = [
+      { name: '必修第一册', subject: '数学', grade: '高一' },
+      { name: '必修第二册', subject: '数学', grade: '高一' },
+      { name: '选择性必修第一册', subject: '数学', grade: '高二' },
+      { name: '选择性必修第二册', subject: '数学', grade: '高二' },
+      { name: '选择性必修第三册', subject: '数学', grade: '高二' },
+      { name: '复习专题', subject: '数学', grade: '高三' },
+      { name: '必修第一册', subject: '物理', grade: '高一' },
+      { name: '必修第二册', subject: '物理', grade: '高一' },
+      { name: '选择性必修', subject: '物理', grade: '高二' },
+      { name: '必修第一册', subject: '化学', grade: '高一' },
+      { name: '必修第二册', subject: '化学', grade: '高一' },
+      { name: '选择性必修', subject: '化学', grade: '高二' },
+      { name: '必修上册', subject: '语文', grade: '高一' },
+      { name: '必修下册', subject: '语文', grade: '高一' },
+      { name: '选择性必修上册', subject: '语文', grade: '高二' },
+      { name: '选择性必修中册', subject: '语文', grade: '高二' },
+      { name: '选择性必修下册', subject: '语文', grade: '高二' },
+      { name: '必修第一册', subject: '英语', grade: '高一' },
+      { name: '必修第二册', subject: '英语', grade: '高一' },
+      { name: '选择性必修', subject: '英语', grade: '高二' },
+      { name: '高等数学(上)', subject: '数学', grade: '大一' },
+      { name: '高等数学(下)', subject: '数学', grade: '大一' },
+      { name: '线性代数', subject: '数学', grade: '大一' },
+      { name: '概率论与数理统计', subject: '数学', grade: '大二' },
+      { name: '离散数学', subject: '数学', grade: '大二' },
+      { name: '大学物理(上)', subject: '物理', grade: '大一' },
+      { name: '大学物理(下)', subject: '物理', grade: '大二' },
+      { name: '无机化学', subject: '化学', grade: '大一' },
+      { name: '有机化学', subject: '化学', grade: '大二' },
+      { name: '分析化学', subject: '化学', grade: '大二' }
+    ];
+    courses.forEach(function(c) {
+      db.courses.push({ id: nextId('courses'), name: c.name, subject: c.subject, grade: c.grade, created_at: nowStr() });
+    });
+  }
+
+  if (db.ai_apis.length === 0) {
+    db.ai_apis.push(
+      {
+        id: nextId('ai_apis'), name: 'Google Gemini (免费)', provider: 'gemini',
+        api_url: 'https://generativelanguage.googleapis.com/v1beta/chat/completions',
+        api_key: '', model: 'gemini-2.0-flash',
+        is_free: 1, is_active: 1, is_default: 1,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: 'Groq (免费)', provider: 'groq',
+        api_url: 'https://api.groq.com/openai/v1/chat/completions',
+        api_key: '', model: 'llama-3.3-70b-versatile',
+        is_free: 1, is_active: 1, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: 'DeepSeek (免费)', provider: 'deepseek',
+        api_url: 'https://api.deepseek.com/v1/chat/completions',
+        api_key: '', model: 'deepseek-chat',
+        is_free: 1, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: 'OpenRouter (免费)', provider: 'openrouter',
+        api_url: 'https://openrouter.ai/api/v1/chat/completions',
+        api_key: '', model: 'google/gemini-2.0-flash-exp:free',
+        is_free: 1, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      },
+      {
+        id: nextId('ai_apis'), name: '自定义API', provider: 'custom',
+        api_url: '', api_key: '', model: '',
+        is_free: 0, is_active: 0, is_default: 0,
+        max_tokens: 2048, temperature: 0.7,
+        created_at: nowStr()
+      }
+    );
     saveNow();
   }
 }

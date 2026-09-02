@@ -227,4 +227,35 @@ router.post('/question-bank/generate', roleMiddleware('teacher', 'admin'), (req,
   }
 });
 
+router.get('/grade-levels', roleMiddleware('teacher', 'admin'), (req, res) => {
+  res.json({ levels: db._raw.grade_levels || [] });
+});
+
+router.get('/textbook-versions', roleMiddleware('teacher', 'admin'), (req, res) => {
+  var subject = req.query.subject;
+  var versions = (db._raw.textbook_versions || []).filter(function(v) {
+    return !subject || v.subject === subject;
+  });
+  res.json({ versions: versions });
+});
+
+router.get('/courses', roleMiddleware('teacher', 'admin'), (req, res) => {
+  var subject = req.query.subject;
+  var grade = req.query.grade;
+  var courses = (db._raw.courses || []).filter(function(c) {
+    return (!subject || c.subject === subject) && (!grade || c.grade === grade);
+  });
+  res.json({ courses: courses });
+});
+
+router.post('/ai-generate', roleMiddleware('teacher', 'admin'), async (req, res) => {
+  var aiGen = require('../services/aiGenerate');
+  try {
+    var result = await aiGen.generateQuestions(req.body);
+    res.json({ success: true, added: result.added, api_used: result.api_used });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
