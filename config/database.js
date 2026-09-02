@@ -49,7 +49,8 @@ function load() {
       const defaults = ['users', 'classes', 'announcements', 'settings', 'student_logs',
         'knowledge_points', 'questions', 'tasks', 'task_questions', 'answers',
         'wrong_questions', 'diagnosis_reports', 'notifications', 'operation_logs',
-        'admin_logs', 'system_config'];
+        'admin_logs', 'system_config', 'chat_groups', 'chat_members', 'chat_messages',
+        'chat_settings', 'chat_announcements'];
       for (const t of defaults) { if (!db[t]) db[t] = []; }
       if (!db._seq) {
         db._seq = {};

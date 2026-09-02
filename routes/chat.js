@@ -148,8 +148,37 @@ router.post('/groups/join-by-code', (req, res) => {
   var userId = req.user.id;
   var group = db._raw.chat_groups.find(function(g) { return g.invite_code === code; });
   if (!group) return res.status(404).json({ error: '邀请码无效' });
-  req.params.id = group.id;
-  return router.handle(req, res);
+
+  var existing = db._raw.chat_members.find(function(m) {
+    return m.group_id === group.id && m.user_id === userId;
+  });
+  if (existing && !existing.left_at) return res.status(400).json({ error: '您已在群聊中' });
+
+  var now = new Date().toISOString();
+  if (existing) { existing.left_at = null; existing.joined_at = now; }
+  else {
+    var memberId = (db._seq.chat_members || 0) + 1;
+    db._seq.chat_members = memberId;
+    db._raw.chat_members.push({
+      id: memberId, group_id: group.id, user_id: userId,
+      role: 'member', nickname: '', remark: '',
+      is_pinned: 0, is_muted: 0, last_read_msg_id: 0,
+      chat_bg: '', joined_at: now, left_at: null
+    });
+  }
+  group.member_count = db._raw.chat_members.filter(function(m) {
+    return m.group_id === group.id && !m.left_at;
+  }).length;
+  var msgId = (db._seq.chat_messages || 0) + 1;
+  db._seq.chat_messages = msgId;
+  var user = db._raw.users.find(function(u) { return u.id === userId; });
+  db._raw.chat_messages.push({
+    id: msgId, group_id: group.id, sender_id: 0,
+    sender_name: '系统', content: (user ? user.username : '某人') + ' 通过邀请码加入群聊',
+    type: 'system', created_at: now
+  });
+  db._saveNow();
+  res.json({ success: true, group: { id: group.id, name: group.name } });
 });
 
 router.post('/groups/:id/leave', (req, res) => {
