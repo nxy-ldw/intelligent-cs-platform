@@ -1811,7 +1811,7 @@
         for (var i = 0; i < apis.length; i++) {
           var api = apis[i];
           var freeBadge = api.is_free ? '<span class="badge badge-success">免费</span>' : '<span class="badge badge-warning">付费</span>';
-          var keyBadge = api.api_key ? '<span class="badge badge-info">已配置Key</span>' : '<span class="badge badge-danger">未配置Key</span>';
+          var keyBadge = api.has_key ? '<span class="badge badge-info">已配置Key</span>' : '<span class="badge badge-danger">未配置Key</span>';
           var defaultBadge = api.is_default ? '<span class="badge badge-primary">默认</span>' : '';
           var activeClass = api.is_active ? 'active' : '';
           html += '<div class="stat-card blue" style="cursor:default;">' +
@@ -1855,8 +1855,8 @@
           if (api) {
             document.getElementById('apiName').value = api.name || '';
             document.getElementById('apiUrl').value = api.api_url || '';
-            document.getElementById('apiKey').value = api.api_key || '';
-            document.getElementById('apiKey').placeholder = api.api_key ? '已配置（不修改请留空）' : 'sk-...';
+            document.getElementById('apiKey').value = '';
+            document.getElementById('apiKey').placeholder = api.has_key ? '已配置（不修改请留空）' : 'sk-...';
             document.getElementById('apiModel').value = api.model || '';
             document.getElementById('apiProvider').value = api.provider || '';
             document.getElementById('apiMaxTokens').value = api.max_tokens || '';
@@ -1888,7 +1888,6 @@
       var body = {
         name: name,
         api_url: document.getElementById('apiUrl').value.trim(),
-        api_key: document.getElementById('apiKey').value.trim(),
         model: document.getElementById('apiModel').value.trim(),
         provider: document.getElementById('apiProvider').value.trim(),
         max_tokens: parseInt(document.getElementById('apiMaxTokens').value) || 4096,
@@ -1897,6 +1896,8 @@
         is_free: parseInt(document.getElementById('apiIsFree').value),
         is_default: parseInt(document.getElementById('apiIsDefault').value)
       };
+      var keyInput = document.getElementById('apiKey').value.trim();
+      if (keyInput) body.api_key = keyInput;
       try {
         if (editingApiId) {
           await API.put('/api/admin/ai-apis/' + editingApiId, body);
