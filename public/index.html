@@ -46,7 +46,8 @@
       -webkit-font-smoothing: antialiased;
     }
     a { text-decoration: none; color: inherit; }
-    button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+    button { font-family: inherit; cursor: pointer; border: none; outline: none; -webkit-tap-highlight-color: transparent; }
+    * { -webkit-tap-highlight-color: transparent; }
     input { font-family: inherit; outline: none; }
     ul { list-style: none; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
@@ -86,6 +87,7 @@
       padding: 10px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
       cursor: pointer; border: none; transition: all 0.25s ease;
       text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;
+      touch-action: manipulation; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
     }
     .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-dark); }
     .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.05); }
@@ -304,10 +306,11 @@
     .modal-header { padding: 28px 32px 0; text-align: center; position: relative; }
     .modal-close {
       position: absolute; top: 16px; right: 16px;
-      width: 32px; height: 32px; border-radius: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
       background: var(--bg-light); color: var(--text-light);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; cursor: pointer; transition: all 0.2s;
+      font-size: 20px; cursor: pointer; transition: all 0.2s;
+      touch-action: manipulation; z-index: 10;
     }
     .modal-close:hover { background: var(--border); color: var(--text-dark); }
     .modal-logo {
@@ -323,16 +326,16 @@
     .form-label .optional { font-weight: 400; color: var(--text-muted); margin-left: 4px; }
     .form-input {
       width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm); font-size: 14px; color: var(--text-dark);
-      background: white; transition: all 0.2s ease;
+      border-radius: var(--radius-sm); font-size: 16px; color: var(--text-dark);
+      background: white; transition: all 0.2s ease; touch-action: manipulation;
     }
     .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     .form-input::placeholder { color: var(--text-muted); }
     .form-select {
       width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm); font-size: 14px; color: var(--text-dark);
+      border-radius: var(--radius-sm); font-size: 16px; color: var(--text-dark);
       background: white; cursor: pointer; transition: all 0.2s ease;
-      appearance: none; -webkit-appearance: none;
+      appearance: none; -webkit-appearance: none; touch-action: manipulation;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center;
     }
@@ -376,7 +379,23 @@
       .steps-grid { grid-template-columns: 1fr; }
       .hero-cta { flex-direction: column; align-items: center; }
       .hero-cta .btn { width: 100%; max-width: 280px; }
-      .modal-header, .modal-body { padding-left: 24px; padding-right: 24px; }
+      .modal-header, .modal-body { padding-left: 20px; padding-right: 20px; }
+      .modal { max-width: 100%; max-height: 85vh; border-radius: 16px; }
+      .modal-overlay { padding: 0; align-items: flex-end; }
+      .modal-overlay.active .modal { animation: slideUp 0.3s ease; }
+      @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .form-input, .form-select { padding: 12px 14px; font-size: 16px; min-height: 48px; }
+      .btn { min-height: 48px; padding: 12px 24px; }
+      .nav-buttons .btn { min-height: 40px; padding: 8px 16px; }
+      .nav-inner { padding: 0 16px; }
+      .section { padding: 60px 0; }
+      .hero { padding: 100px 0 60px; }
+      .hero h1 { font-size: 28px; }
+      .hero p { font-size: 15px; }
+      .stat-number { font-size: 22px; }
+      .stat-label { font-size: 12px; }
+      .role-card { padding: 24px; }
+      .footer-bottom { gap: 12px; }
     }
   </style>
 </head>
@@ -829,6 +848,7 @@
       if (!username || !password) { showFormError('login', '请填写用户名和密码'); return; }
       setButtonLoading('login', true, '登录中...');
       showFormError('login', '');
+      var success = false;
       try {
         var response = await fetch('/api/auth/login', {
           method: 'POST',
@@ -837,15 +857,17 @@
         });
         var data = await response.json();
         if (response.ok && data.token) {
+          success = true;
           showFormSuccess('login', '登录成功！正在跳转...');
           localStorage.setItem('token', data.token);
           if (data.user) { localStorage.setItem('user', JSON.stringify(data.user)); }
           setTimeout(function() {
             var user = data.user;
-            if (user && user.role === 'teacher') { window.location.href = '/teacher/'; }
-            else if (user && user.role === 'admin') { window.location.href = '/admin/'; }
-            else { window.location.href = '/student/'; }
-          }, 1000);
+            var url = '/student/';
+            if (user && user.role === 'teacher') { url = '/teacher/'; }
+            else if (user && user.role === 'admin') { url = '/admin/'; }
+            window.location.replace(url);
+          }, 500);
         } else {
           var errorMsg = data.error || data.message || '登录失败，请检查用户名和密码';
           showFormError('login', errorMsg);
@@ -854,7 +876,7 @@
         console.error('Login error:', error);
         showFormError('login', '网络错误，请稍后重试');
       } finally {
-        setButtonLoading('login', false);
+        if (!success) setButtonLoading('login', false);
       }
     }
 
@@ -871,6 +893,7 @@
       if (password !== confirmPassword) { showFormError('register', '两次输入的密码不一致'); return; }
       setButtonLoading('register', true, '注册中...');
       showFormError('register', '');
+      var success = false;
       try {
         var payload = { role: role, username: username, password: password };
         if (classCode) { payload.classCode = classCode; }
@@ -881,14 +904,16 @@
         });
         var data = await response.json();
         if (response.ok && data.token) {
+          success = true;
           showFormSuccess('register', '注册成功！正在跳转...');
           localStorage.setItem('token', data.token);
           if (data.user) { localStorage.setItem('user', JSON.stringify(data.user)); }
           setTimeout(function() {
-            if (role === 'teacher') { window.location.href = '/teacher/'; }
-            else if (role === 'admin') { window.location.href = '/admin/'; }
-            else { window.location.href = '/student/'; }
-          }, 1500);
+            var url = '/student/';
+            if (role === 'teacher') { url = '/teacher/'; }
+            else if (role === 'admin') { url = '/admin/'; }
+            window.location.replace(url);
+          }, 800);
         } else {
           var errorMsg = data.error || data.message || '注册失败，请稍后重试';
           showFormError('register', errorMsg);
@@ -897,7 +922,7 @@
         console.error('Register error:', error);
         showFormError('register', '网络错误，请稍后重试');
       } finally {
-        setButtonLoading('register', false);
+        if (!success) setButtonLoading('register', false);
       }
     }
   </script>
