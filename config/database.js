@@ -1,110 +1,327 @@
-const Database = require('better-sqlite3');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const bcrypt = require('bcryptjs');
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'app.db');
-const db = new Database(dbPath);
+const dbPath = path.join(dataDir, 'app.json');
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+let db = {
+  users: [],
+  classes: [],
+  announcements: [],
+  messages: [],
+  settings: [],
+  knowledge_base: [],
+  student_logs: [],
+  _seq: { users: 0, classes: 0, announcements: 0, messages: 0, knowledge_base: 0, student_logs: 0 }
+};
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'student',
-    phone TEXT DEFAULT '',
-    qq TEXT DEFAULT '',
-    class_code TEXT DEFAULT '',
-    identity TEXT DEFAULT '',
-    created_by TEXT DEFAULT 'system',
-    is_banned INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-  );
+function load() {
+  if (fs.existsSync(dbPath)) {
+    try {
+      const raw = fs.readFileSync(dbPath, 'utf8');
+      db = JSON.parse(raw);
+      if (!db._seq) db._seq = { users: 0, classes: 0, announcements: 0, messages: 0, knowledge_base: 0, student_logs: 0 };
+      if (!db.users) db.users = [];
+      if (!db.classes) db.classes = [];
+      if (!db.announcements) db.announcements = [];
+      if (!db.messages) db.messages = [];
+      if (!db.settings) db.settings = [];
+      if (!db.knowledge_base) db.knowledge_base = [];
+      if (!db.student_logs) db.student_logs = [];
+    } catch (e) {
+      console.error('Failed to load database, starting fresh:', e.message);
+    }
+  }
+}
 
-  CREATE TABLE IF NOT EXISTS classes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    class_code TEXT UNIQUE NOT NULL,
-    class_name TEXT NOT NULL,
-    teacher_id INTEGER NOT NULL,
-    teacher_name TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    FOREIGN KEY (teacher_id) REFERENCES users(id)
-  );
+let saveTimer = null;
+function save() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8');
+    } catch (e) {
+      console.error('Failed to save database:', e.message);
+    }
+  }, 100);
+}
 
-  CREATE TABLE IF NOT EXISTS announcements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    created_by TEXT NOT NULL,
-    is_active INTEGER DEFAULT 1,
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-  );
+function saveNow() {
+  try {
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 0), 'utf8');
+  } catch (e) {
+    console.error('Failed to save database:', e.message);
+  }
+}
 
-  CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    role TEXT NOT NULL,
-    content TEXT NOT NULL,
-    intent TEXT DEFAULT '',
-    confidence REAL DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
+load();
 
-  CREATE TABLE IF NOT EXISTS settings (
-    key TEXT PRIMARY KEY,
-    value TEXT
-  );
+function nextId(table) {
+  if (!db._seq[table]) db._seq[table] = 0;
+  return ++db._seq[table];
+}
 
-  CREATE TABLE IF NOT EXISTS knowledge_base (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category TEXT NOT NULL,
-    question TEXT NOT NULL,
-    answer TEXT NOT NULL,
-    keywords TEXT DEFAULT '',
-    created_at TEXT DEFAULT (datetime('now','localtime'))
-  );
+function nowStr() {
+  const d = new Date();
+  const offset = d.getTimezoneOffset() * 60000;
+  const local = new Date(d.getTime() - offset);
+  return local.toISOString().replace('T', ' ').substring(0, 19);
+}
 
-  CREATE TABLE IF NOT EXISTS student_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    detail TEXT DEFAULT '',
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  );
-`);
+function where(table, conditions) {
+  return db[table].filter(row => {
+    for (const [key, val] of Object.entries(conditions)) {
+      if (row[key] !== val) return false;
+    }
+    return true;
+  });
+}
+
+function insert(table, data) {
+  const row = { id: nextId(table), ...data, created_at: data.created_at || nowStr() };
+  db[table].push(row);
+  save();
+  return row;
+}
+
+function update(table, conditions, updates) {
+  let count = 0;
+  for (const row of db[table]) {
+    let match = true;
+    for (const [key, val] of Object.entries(conditions)) {
+      if (row[key] !== val) { match = false; break; }
+    }
+    if (match) {
+      Object.assign(row, updates);
+      count++;
+    }
+  }
+  if (count > 0) save();
+  return { changes: count };
+}
+
+function del(table, conditions) {
+  const before = db[table].length;
+  db[table] = db[table].filter(row => {
+    for (const [key, val] of Object.entries(conditions)) {
+      if (row[key] !== val) return true;
+    }
+    return false;
+  });
+  const changes = before - db[table].length;
+  if (changes > 0) save();
+  return { changes };
+}
+
+const dbWrapper = {
+  prepare(sql) {
+    return {
+      get(...params) {
+        return _execute(sql, params, 'get');
+      },
+      all(...params) {
+        return _execute(sql, params, 'all');
+      },
+      run(...params) {
+        return _execute(sql, params, 'run');
+      }
+    };
+  },
+  pragma() {},
+  exec() {}
+};
+
+function _execute(sql, params, mode) {
+  sql = sql.trim().replace(/\s+/g, ' ');
+
+  if (sql.startsWith('SELECT COUNT(*) as c FROM')) {
+    const tableMatch = sql.match(/FROM (\w+)/);
+    if (!tableMatch) return mode === 'get' ? { c: 0 } : [];
+    let table = tableMatch[1];
+
+    let conditions = {};
+    const whereMatch = sql.match(/WHERE (.+)/i);
+    if (whereMatch) {
+      conditions = _parseWhere(whereMatch[1], params);
+    }
+    const rows = where(table, conditions);
+    const result = { c: rows.length };
+    return mode === 'get' ? result : [result];
+  }
+
+  if (sql.startsWith('SELECT')) {
+    const tableMatch = sql.match(/FROM (\w+)/);
+    if (!tableMatch) return mode === 'get' ? null : [];
+    let table = tableMatch[1];
+    let rows = db[table] ? [...db[table]] : [];
+
+    const whereMatch = sql.match(/WHERE (.+?)(?:ORDER BY|LIMIT|$)/i);
+    if (whereMatch) {
+      conditions = _parseWhere(whereMatch[1], params);
+      rows = rows.filter(row => {
+        for (const [key, val] of Object.entries(conditions)) {
+          if (val && typeof val === 'object' && val.$in) {
+            if (!val.$in.includes(row[key])) return false;
+          } else if (val && typeof val === 'object' && val.$like) {
+            const pattern = val.$like.replace(/%/g, '.*');
+            if (!new RegExp(pattern, 'i').test(row[key] || '')) return false;
+          } else {
+            if (row[key] !== val) return false;
+          }
+        }
+        return true;
+      });
+    }
+
+    const orderMatch = sql.match(/ORDER BY (\w+)(?:\s+(ASC|DESC))?/i);
+    if (orderMatch) {
+      const col = orderMatch[1];
+      const dir = (orderMatch[2] || 'ASC').toUpperCase();
+      rows.sort((a, b) => {
+        if (a[col] < b[col]) return dir === 'ASC' ? -1 : 1;
+        if (a[col] > b[col]) return dir === 'ASC' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const limitMatch = sql.match(/LIMIT (\d+)/i);
+    if (limitMatch) {
+      const limit = parseInt(limitMatch[1]);
+      if (sql.match(/ORDER BY.*DESC/i)) {
+        rows = rows.slice(0, limit).reverse();
+      } else {
+        rows = rows.slice(0, limit);
+      }
+    }
+
+    if (mode === 'get') return rows[0] || null;
+    return rows;
+  }
+
+  if (sql.startsWith('INSERT INTO')) {
+    const tableMatch = sql.match(/INSERT INTO (\w+)/);
+    if (!tableMatch) return { changes: 0 };
+    const table = tableMatch[1];
+    const row = {};
+    const colsMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/);
+    if (colsMatch) {
+      const cols = colsMatch[1].split(',').map(s => s.trim());
+      cols.forEach((col, i) => {
+        row[col] = params[i];
+      });
+    }
+    insert(table, row);
+    return { changes: 1, lastInsertRowid: row.id };
+  }
+
+  if (sql.startsWith('UPDATE')) {
+    const tableMatch = sql.match(/UPDATE (\w+) SET/);
+    if (!tableMatch) return { changes: 0 };
+    const table = tableMatch[1];
+    const setMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
+    const whereMatch = sql.match(/WHERE\s+(.+)/i);
+
+    if (!setMatch || !whereMatch) return { changes: 0 };
+    const setParts = setMatch[1].split(',').map(s => s.trim());
+    const updates = {};
+    let paramIdx = 0;
+    for (const part of setParts) {
+      const [col] = part.split('=').map(s => s.trim());
+      updates[col] = params[paramIdx++];
+    }
+    const conditions = _parseWhere(whereMatch[1], params.slice(paramIdx));
+    return update(table, conditions, updates);
+  }
+
+  if (sql.startsWith('DELETE FROM')) {
+    const tableMatch = sql.match(/DELETE FROM (\w+)/);
+    if (!tableMatch) return { changes: 0 };
+    const table = tableMatch[1];
+    const whereMatch = sql.match(/WHERE\s+(.+)/i);
+    if (!whereMatch) {
+      const count = db[table].length;
+      db[table] = [];
+      save();
+      return { changes: count };
+    }
+    const conditions = _parseWhere(whereMatch[1], params);
+    return del(table, conditions);
+  }
+
+  return mode === 'get' ? null : [];
+}
+
+function _parseWhere(whereClause, params) {
+  const conditions = {};
+  let paramIdx = 0;
+  let cleaned = whereClause.replace(/AND/gi, '§AND§').split('§');
+
+  for (const part of cleaned) {
+    const trimmed = part.trim().replace(/^AND\s+/i, '').trim();
+    if (!trimmed) continue;
+
+    const likeMatch = trimmed.match(/(\w+)\s+LIKE\s*\?/i);
+    if (likeMatch) {
+      conditions[likeMatch[1]] = { $like: params[paramIdx++] };
+      continue;
+    }
+
+    const inMatch = trimmed.match(/(\w+)\s+IN\s+\(([^)]+)\)/i);
+    if (inMatch) {
+      const placeholders = inMatch[2].split(',').map(s => s.trim());
+      const values = placeholders.map(() => params[paramIdx++]);
+      conditions[inMatch[1]] = { $in: values };
+      continue;
+    }
+
+    const eqMatch = trimmed.match(/(\w+)\s*=\s*\?/);
+    if (eqMatch) {
+      conditions[eqMatch[1]] = params[paramIdx++];
+      continue;
+    }
+  }
+
+  return conditions;
+}
 
 function ensureDefaultData() {
-  const bcrypt = require('bcryptjs');
-  const adminCount = db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'admin'").get();
-  if (adminCount.c === 0) {
+  const adminCount = db.users.filter(u => u.role === 'admin').length;
+  if (adminCount === 0) {
     const admins = [
       { name: '陆楚航', pwd: 'lch12345600' },
       { name: '乔子煜', pwd: 'qzy12345600' },
       { name: '季彦熹', pwd: 'jyx12345600' }
     ];
-    const stmt = db.prepare("INSERT INTO users (username, password, role, identity) VALUES (?, ?, 'admin', '系统管理员')");
     for (const a of admins) {
       const hash = bcrypt.hashSync(a.pwd, 10);
-      stmt.run(a.name, hash);
+      db.users.push({
+        id: nextId('users'),
+        username: a.name,
+        password: hash,
+        role: 'admin',
+        phone: '',
+        qq: '',
+        class_code: '',
+        identity: '系统管理员',
+        created_by: 'system',
+        is_banned: 0,
+        created_at: nowStr()
+      });
     }
   }
 
-  const maintenance = db.prepare("SELECT value FROM settings WHERE key = 'maintenance_mode'").get();
+  const maintenance = db.settings.find(s => s.key === 'maintenance_mode');
   if (!maintenance) {
-    db.prepare("INSERT INTO settings (key, value) VALUES ('maintenance_mode', 'false')").run();
+    db.settings.push({ key: 'maintenance_mode', value: 'false' });
   }
 
-  const kbCount = db.prepare("SELECT COUNT(*) as c FROM knowledge_base").get();
-  if (kbCount.c === 0) {
+  const kbCount = db.knowledge_base.length;
+  if (kbCount === 0) {
     const kbs = [
       { cat: '系统介绍', q: '这个系统是做什么的', a: '本系统是一个智能客服系统教学平台，基于医学知识库的智能应答系统。包含意图识别、多轮对话、知识库问答、人机协同等核心功能。', kw: '系统,介绍,做什么,功能,是什么' },
       { cat: '系统介绍', q: '系统的核心功能有哪些', a: '核心功能包括：1.核心对话系统（意图识别、多轮对话、知识库问答）2.知识库管理 3.智能分配（人机协同）4.多渠道接入 5.数据分析与监控', kw: '核心,功能,有哪些,包括' },
@@ -123,13 +340,23 @@ function ensureDefaultData() {
       { cat: '通用问答', q: '谢谢', a: '不客气！如果您还有其他问题，随时可以向我咨询。祝您使用愉快！', kw: '谢谢,感谢,thanks' },
       { cat: '通用问答', q: '再见', a: '感谢您的使用，再见！如有需要随时回来咨询。', kw: '再见,拜拜,bye,goodbye' }
     ];
-    const stmt = db.prepare("INSERT INTO knowledge_base (category, question, answer, keywords) VALUES (?, ?, ?, ?)");
     for (const kb of kbs) {
-      stmt.run(kb.cat, kb.q, kb.a, kb.kw);
+      db.knowledge_base.push({
+        id: nextId('knowledge_base'),
+        category: kb.cat,
+        question: kb.q,
+        answer: kb.a,
+        keywords: kb.kw,
+        created_at: nowStr()
+      });
     }
   }
+
+  saveNow();
 }
 
 ensureDefaultData();
 
-module.exports = db;
+module.exports = dbWrapper;
+module.exports._raw = db;
+module.exports._saveNow = saveNow;
