@@ -52,10 +52,8 @@ function load() {
         'admin_logs', 'system_config', 'chat_groups', 'chat_members', 'chat_messages',
         'chat_settings', 'chat_announcements'];
       for (const t of defaults) { if (!db[t]) db[t] = []; }
-      if (!db._seq) {
-        db._seq = {};
-        for (const t of defaults) db._seq[t] = 0;
-      }
+      if (!db._seq) db._seq = {};
+      for (const t of defaults) { if (db._seq[t] === undefined) db._seq[t] = 0; }
     } catch (e) {
       console.error('Failed to load database, starting fresh:', e.message);
     }
@@ -821,6 +819,7 @@ try {
 
 module.exports = dbWrapper;
 module.exports._raw = db;
+module.exports._seq = db._seq;
 module.exports._saveNow = saveNow;
 module.exports._nowStr = nowStr;
 module.exports._insert = insert;
