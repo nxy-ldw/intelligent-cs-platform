@@ -877,7 +877,7 @@ function ensureSystemConfig() {
       {
         id: nextId('ai_apis'), name: '智谱GLM-4-Flash (永久免费)', provider: 'zhipu',
         api_url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-        api_key: '', model: 'glm-4-flash',
+        api_key: '3a32f298717b4e5986715f0e6fc37f49.h5gxPGjLlV0J4Ezc', model: 'glm-4-flash',
         is_free: 1, is_active: 1, is_default: 1,
         max_tokens: 2048, temperature: 0.7,
         created_at: nowStr()
@@ -945,6 +945,12 @@ function ensureSystemConfig() {
 try {
   ensureSystemConfig();
   ensureDefaultData();
+  var zhipuApi = (db.ai_apis || []).find(function(a) { return a.provider === 'zhipu'; });
+  if (zhipuApi && !zhipuApi.api_key) {
+    zhipuApi.api_key = '3a32f298717b4e5986715f0e6fc37f49.h5gxPGjLlV0J4Ezc';
+    saveNow();
+    console.log('Zhipu API key embedded.');
+  }
   try {
     var gen = require('../services/questionGenerator');
     var result = gen.populateDatabase(1000, { _raw: db, _seq: db._seq, _saveNow: saveNow, _nowStr: nowStr });
