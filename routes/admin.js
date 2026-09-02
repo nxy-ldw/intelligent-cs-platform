@@ -122,6 +122,13 @@ router.get('/ai-apis', (req, res) => {
   res.json({ apis: aiGen.getApis() });
 });
 
+router.post('/ai-apis', (req, res) => {
+  var aiGen = require('../services/aiGenerate');
+  var ok = aiGen.addApi(req.body);
+  if (ok) res.json({ success: true });
+  else res.status(400).json({ error: '添加失败' });
+});
+
 router.put('/ai-apis/:id', (req, res) => {
   var aiGen = require('../services/aiGenerate');
   var ok = aiGen.updateApi(parseInt(req.params.id), req.body);

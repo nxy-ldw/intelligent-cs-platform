@@ -215,6 +215,7 @@ function updateApi(id, updates) {
   if (updates.api_key !== undefined) api.api_key = updates.api_key;
   if (updates.model !== undefined) api.model = updates.model;
   if (updates.is_active !== undefined) api.is_active = updates.is_active ? 1 : 0;
+  if (updates.is_free !== undefined) api.is_free = updates.is_free ? 1 : 0;
   if (updates.is_default !== undefined) {
     if (updates.is_default) {
       (db._raw.ai_apis || []).forEach(function(a) { a.is_default = 0; });
@@ -227,9 +228,34 @@ function updateApi(id, updates) {
   return true;
 }
 
+function addApi(data) {
+  var api = {
+    id: db._nextId('ai_apis'),
+    name: data.name || '未命名API',
+    provider: data.provider || 'custom',
+    api_url: data.api_url || '',
+    api_key: data.api_key || '',
+    model: data.model || '',
+    is_free: data.is_free ? 1 : 0,
+    is_active: data.is_active ? 1 : 0,
+    is_default: 0,
+    max_tokens: parseInt(data.max_tokens) || 2048,
+    temperature: parseFloat(data.temperature) || 0.7,
+    created_at: new Date().toISOString().replace('T', ' ').substring(0, 19)
+  };
+  if (data.is_default) {
+    (db._raw.ai_apis || []).forEach(function(a) { a.is_default = 0; });
+    api.is_default = 1;
+  }
+  db._raw.ai_apis.push(api);
+  db._saveNow();
+  return true;
+}
+
 module.exports = {
   generateQuestions: generateQuestions,
   getApis: getApis,
+  addApi: addApi,
   updateApi: updateApi,
   getDefaultApi: getDefaultApi,
   callApi: callApi
