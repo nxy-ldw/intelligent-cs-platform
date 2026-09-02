@@ -1,0 +1,7 @@
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/api/auth/maintenance"
+healthcheckTimeout = 30
+
+[build]
+builder = "nixpacks"

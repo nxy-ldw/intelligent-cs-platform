@@ -1,0 +1,21 @@
+{
+  "name": "intelligent-cs-platform",
+  "version": "1.0.0",
+  "description": "智能客服系统教学平台 - 学生端/教师端/管理端",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.1"
+  }
+}

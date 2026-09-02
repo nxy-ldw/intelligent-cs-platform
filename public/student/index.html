@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学生端 - 智能客服系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 200px);
+      min-height: 500px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #f8fafc;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .chat-message {
+      display: flex;
+      gap: 12px;
+      max-width: 80%;
+      animation: fadeIn 0.3s ease;
+    }
+    .chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: white;
+      flex-shrink: 0;
+    }
+    .chat-avatar.ai { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    .chat-avatar.user { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .chat-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .chat-message.ai .chat-bubble {
+      background: white;
+      color: var(--text-dark);
+      border: 1px solid var(--border-color);
+      border-top-left-radius: 4px;
+    }
+    .chat-message.user .chat-bubble {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border-top-right-radius: 4px;
+    }
+    .chat-meta {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-top: 4px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .chat-suggestions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .suggestion-chip {
+      padding: 6px 14px;
+      background: rgba(99,102,241,0.08);
+      color: var(--primary);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .suggestion-chip:hover {
+      background: rgba(99,102,241,0.15);
+      border-color: var(--primary);
+    }
+    .chat-input-area {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      font-size: 14px;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+    .chat-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .chat-send-btn {
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .chat-send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      border-top-left-radius: 4px;
+    }
+    .typing-dot {
+      width: 8px; height: 8px;
+      background: #94a3b8;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-8px); }
+    }
+    .escalation-banner {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 1px solid #f59e0b;
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #92400e;
+      margin-bottom: 12px;
+    }
+    .kb-search {
+      margin-bottom: 20px;
+    }
+    .kb-categories {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .kb-category-chip {
+      padding: 6px 14px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+    .kb-category-chip:hover { border-color: var(--primary); }
+    .kb-category-chip.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .kb-item {
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 12px;
+      transition: var(--transition);
+    }
+    .kb-item:hover { box-shadow: var(--shadow-md); }
+    .kb-item .kb-q { font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 6px; }
+    .kb-item .kb-a { font-size: 14px; color: var(--text-medium); line-height: 1.6; }
+    .kb-item .kb-cat { font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 4px; }
+    .join-class-card {
+      max-width: 480px;
+      text-align: center;
+      padding: 40px;
+    }
+    .join-class-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+    .class-joined-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+      border-radius: 16px;
+      border: 1px solid var(--border-color);
+    }
+    .class-info-icon {
+      width: 56px; height: 56px;
+      border-radius: 14px;
+      background: var(--gradient-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      top: 16px; left: 16px;
+      z-index: 200;
+      width: 40px; height: 40px;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 20px;
+      align-items: center; justify-content: center;
+    }
+    @media (max-width: 1024px) {
+      .mobile-menu-btn { display: flex; }
+      .chat-container { height: calc(100vh - 240px); }
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">🤖</div>
+        <div class="brand-text">智能客服系统<small>学生端</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">主要功能</div>
+          <div class="nav-item active" onclick="switchSection('dashboard', this)">
+            <span class="nav-icon">🏠</span><span>仪表盘</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('chat', this)">
+            <span class="nav-icon">💬</span><span>AI智能对话</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('knowledge', this)">
+            <span class="nav-icon">📚</span><span>知识库</span>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">项目信息</div>
+          <div class="nav-item" onclick="switchSection('project', this)">
+            <span class="nav-icon">📋</span><span>立项内容</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('features', this)">
+            <span class="nav-icon">✨</span><span>功能需求</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('architecture', this)">
+            <span class="nav-icon">🏗️</span><span>系统架构</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('kpi', this)">
+            <span class="nav-icon">📊</span><span>性能指标</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('phases', this)">
+            <span class="nav-icon">📅</span><span>开发阶段</span>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">个人</div>
+          <div class="nav-item" onclick="switchSection('class', this)">
+            <span class="nav-icon">🎓</span><span>我的班级</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('logs', this)">
+            <span class="nav-icon">📝</span><span>活动记录</span>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user" onclick="logout()">
+          <div class="avatar" id="userAvatar">S</div>
+          <div class="user-info">
+            <div class="user-name" id="userName">学生</div>
+            <div class="user-role">退出登录</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="dashboard" class="content-section active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">仪表盘</h1>
+            <p class="page-subtitle">欢迎使用智能客服系统教学平台</p>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(99,102,241,0.1)">💬</div>
+            <div class="stat-value" id="chatCount">0</div>
+            <div class="stat-label">AI对话次数</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(16,185,129,0.1)">📚</div>
+            <div class="stat-value" id="kbCount">0</div>
+            <div class="stat-label">知识库条目</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.1)">🎓</div>
+            <div class="stat-value" id="classStatus">未加入</div>
+            <div class="stat-label">班级状态</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(139,92,246,0.1)">✨</div>
+            <div class="stat-value">6</div>
+            <div class="stat-label">核心功能模块</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">快速入口</h2>
+          </div>
+          <div class="card-body">
+            <div class="feature-grid">
+              <div class="feature-card" onclick="switchSection('chat', document.querySelectorAll('.nav-item')[1])" style="cursor:pointer">
+                <div class="feature-icon">💬</div>
+                <div class="feature-title">AI智能对话</div>
+                <div class="feature-desc">与AI客服进行多轮对话，体验意图识别、知识库问答和人机协同功能</div>
+              </div>
+              <div class="feature-card" onclick="switchSection('knowledge', document.querySelectorAll('.nav-item')[2])" style="cursor:pointer">
+                <div class="feature-icon">📚</div>
+                <div class="feature-title">知识库浏览</div>
+                <div class="feature-desc">浏览医学知识库，了解疾病、症状、治疗、药物等知识条目</div>
+              </div>
+              <div class="feature-card" onclick="switchSection('project', document.querySelectorAll('.nav-item')[3])" style="cursor:pointer">
+                <div class="feature-icon">📋</div>
+                <div class="feature-title">项目立项内容</div>
+                <div class="feature-desc">查看完整的立项需求文档，了解系统背景、功能需求和开发计划</div>
+              </div>
+              <div class="feature-card" onclick="switchSection('class', document.querySelectorAll('.nav-item')[8])" style="cursor:pointer">
+                <div class="feature-icon">🎓</div>
+                <div class="feature-title">加入班级</div>
+                <div class="feature-desc">输入教师提供的班级代码，加入对应班级参与学习管理</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">AI智能对话</h1>
+            <p class="page-subtitle">基于医学知识库的智能应答系统</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="clearChat()">清空对话</button>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:20px">
+            <div class="chat-container">
+              <div class="chat-messages" id="chatMessages">
+                <div class="chat-message ai">
+                  <div class="chat-avatar ai">🤖</div>
+                  <div>
+                    <div class="chat-bubble">您好！我是智能客服助手。我可以为您介绍系统功能、对话机制、知识库管理、人机协同、性能指标等内容。请问有什么可以帮您的？</div>
+                    <div class="chat-suggestions">
+                      <span class="suggestion-chip" onclick="sendQuickMessage('系统是做什么的？')">系统是做什么的？</span>
+                      <span class="suggestion-chip" onclick="sendQuickMessage('核心功能有哪些？')">核心功能有哪些？</span>
+                      <span class="suggestion-chip" onclick="sendQuickMessage('知识库包含哪些内容？')">知识库包含哪些内容？</span>
+                      <span class="suggestion-chip" onclick="sendQuickMessage('什么时候转人工？')">什么时候转人工？</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="chat-input-area">
+                <textarea class="chat-input" id="chatInput" placeholder="输入您的问题..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+                <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="knowledge" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">知识库</h1>
+            <p class="page-subtitle">浏览医学知识库中的问答条目</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="kb-search">
+              <input type="text" class="form-control" id="kbSearch" placeholder="搜索知识库..." oninput="filterKnowledge(this.value)">
+            </div>
+            <div class="kb-categories" id="kbCategories"></div>
+            <div id="kbList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="project" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">立项内容</h1>
+            <p class="page-subtitle">智能客服系统项目需求文档</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" id="projectInfo"></div>
+        </div>
+      </div>
+
+      <div id="features" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">功能需求</h1>
+            <p class="page-subtitle">系统核心功能模块</p>
+          </div>
+        </div>
+        <div id="featuresList"></div>
+      </div>
+
+      <div id="architecture" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">系统架构</h1>
+            <p class="page-subtitle">分层架构设计</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" id="archList"></div>
+        </div>
+      </div>
+
+      <div id="kpi" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">性能指标</h1>
+            <p class="page-subtitle">关键性能指标 (KPI)</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" id="kpiList"></div>
+        </div>
+      </div>
+
+      <div id="phases" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">开发阶段</h1>
+            <p class="page-subtitle">项目开发路线图</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" id="phaseList"></div>
+        </div>
+      </div>
+
+      <div id="class" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">我的班级</h1>
+            <p class="page-subtitle">加入或查看您的班级</p>
+          </div>
+        </div>
+        <div id="classContent"></div>
+      </div>
+
+      <div id="logs" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">活动记录</h1>
+            <p class="page-subtitle">您的系统操作记录</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>操作</th><th>详情</th><th>时间</th></tr>
+                </thead>
+                <tbody id="logsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/student.js"></script>
+</body>
+</html>

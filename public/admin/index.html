@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理端 - 智能客服系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .mobile-menu-btn { display: none; position: fixed; top: 16px; left: 16px; z-index: 200; width: 40px; height: 40px; background: white; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 20px; align-items: center; justify-content: center; }
+    @media (max-width: 1024px) { .mobile-menu-btn { display: flex; } }
+    .maintenance-toggle {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, rgba(239,68,68,0.05), rgba(245,158,11,0.05));
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      background: #cbd5e1;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .toggle-switch.active { background: var(--danger); }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch.active::after { left: 27px; }
+    .toggle-label { font-size: 15px; font-weight: 600; }
+    .toggle-desc { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+    .admin-stat-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .admin-stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .admin-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .stat-card.blue::before { background: linear-gradient(90deg, #3b82f6, #06b6d4); }
+    .stat-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #6366f1); }
+    .stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .stat-card.red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .stat-card.orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .stat-card.indigo::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+    .role-tabs { margin-bottom: 20px; }
+    .user-avatar-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar-cell .avatar-sm {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--gradient-primary);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">🤖</div>
+        <div class="brand-text">智能客服系统<small>管理端</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">系统管理</div>
+          <div class="nav-item active" onclick="switchSection('dashboard', this)">
+            <span class="nav-icon">📊</span><span>系统概览</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('users', this)">
+            <span class="nav-icon">👥</span><span>用户管理</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('generate', this)">
+            <span class="nav-icon">⚡</span><span>批量生成</span>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">内容管理</div>
+          <div class="nav-item" onclick="switchSection('announcements', this)">
+            <span class="nav-icon">📢</span><span>公告管理</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('knowledge', this)">
+            <span class="nav-icon">📚</span><span>知识库管理</span>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">系统设置</div>
+          <div class="nav-item" onclick="switchSection('settings', this)">
+            <span class="nav-icon">⚙️</span><span>维护模式</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('chat', this)">
+            <span class="nav-icon">💬</span><span>AI对话</span>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user" onclick="logout()">
+          <div class="avatar" id="userAvatar">A</div>
+          <div class="user-info">
+            <div class="user-name" id="userName">管理员</div>
+            <div class="user-role">退出登录</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="dashboard" class="content-section active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">系统概览</h1>
+            <p class="page-subtitle">平台运营数据总览</p>
+          </div>
+          <button class="btn btn-primary" onclick="loadStats()">刷新数据</button>
+        </div>
+        <div class="stat-grid" id="adminStatsGrid"></div>
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">最近注册用户</h2></div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>用户</th><th>角色</th><th>手机号</th><th>QQ号</th><th>班级</th><th>状态</th><th>注册时间</th></tr></thead>
+                <tbody id="recentUsersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="users" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">用户管理</h1>
+            <p class="page-subtitle">管理所有学生和教师账号</p>
+          </div>
+          <button class="btn btn-primary" onclick="showCreateUserModal()">+ 添加用户</button>
+        </div>
+        <div class="role-tabs">
+          <div class="tab-bar">
+            <div class="tab-item active" onclick="filterUsers('all', this)">全部</div>
+            <div class="tab-item" onclick="filterUsers('student', this)">学生端</div>
+            <div class="tab-item" onclick="filterUsers('teacher', this)">教师端</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:20px;">
+          <input type="text" class="form-control" id="userSearchInput" placeholder="搜索用户名、手机号、QQ号、身份..." oninput="searchUsers(this.value)">
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>用户</th><th>角色</th><th>手机号</th><th>QQ号</th><th>班级代码</th><th>身份</th><th>状态</th><th>创建者</th><th>操作</th></tr></thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="generate" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">批量生成账号</h1>
+            <p class="page-subtitle">快速批量创建学生或教师账号</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">账号角色</label>
+              <select class="form-control" id="genRole">
+                <option value="student">学生</option>
+                <option value="teacher">教师</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">用户名前缀</label>
+              <input type="text" class="form-control" id="genPrefix" placeholder="如：student 或 teacher">
+            </div>
+            <div class="form-group">
+              <label class="form-label">生成数量</label>
+              <input type="number" class="form-control" id="genCount" value="10" min="1" max="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">班级代码（可选，仅学生）</label>
+              <input type="text" class="form-control" id="genClassCode" placeholder="留空则不分配班级">
+            </div>
+            <button class="btn btn-primary" onclick="generateAccounts()">生成账号</button>
+            <div id="genResult" style="margin-top:20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="announcements" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">公告管理</h1>
+            <p class="page-subtitle">发布和管理系统公告</p>
+          </div>
+          <button class="btn btn-primary" onclick="showAnnouncementModal()">+ 发布公告</button>
+        </div>
+        <div id="annList"></div>
+      </div>
+
+      <div id="knowledge" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">知识库管理</h1>
+            <p class="page-subtitle">管理AI客服知识库条目</p>
+          </div>
+          <button class="btn btn-primary" onclick="showKbModal()">+ 添加条目</button>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>分类</th><th>问题</th><th>答案</th><th>关键词</th><th>操作</th></tr></thead>
+                <tbody id="kbBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">维护模式</h1>
+            <p class="page-subtitle">开启后所有非管理员用户将看到维护弹窗</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="maintenance-toggle">
+              <div class="toggle-switch" id="maintenanceToggle" onclick="toggleMaintenance()"></div>
+              <div>
+                <div class="toggle-label" id="maintenanceLabel">维护模式：关闭</div>
+                <div class="toggle-desc">开启后，学生和教师端将显示无法关闭的维护弹窗，只有关闭维护模式后才会自动消失</div>
+              </div>
+            </div>
+            <div style="margin-top:20px;padding:16px;background:#fef3c7;border-radius:10px;border:1px solid #fde68a;">
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <span style="font-size:20px;">⚠️</span>
+                <div style="font-size:13px;color:#92400e;line-height:1.6;">
+                  <strong>注意：</strong>维护模式下，学生和教师无法登录系统。管理员仍可正常登录和管理。弹窗无法手动关闭，只有在此处关闭维护模式后才会自动消失。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="chat" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">AI智能对话</h1>
+            <p class="page-subtitle">体验AI客服对话功能</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:20px;">
+            <div id="adminChatContainer"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal">
+      <div class="modal-header"><h2 class="modal-title">添加用户</h2><button class="modal-close" onclick="closeModal('createUserModal')">×</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">用户名 *</label><input type="text" class="form-control" id="newUsername" placeholder="请输入用户名"></div>
+        <div class="form-group"><label class="form-label">密码 *</label><input type="text" class="form-control" id="newPassword" placeholder="请输入密码"></div>
+        <div class="form-group"><label class="form-label">角色 *</label><select class="form-control" id="newRole"><option value="student">学生</option><option value="teacher">教师</option></select></div>
+        <div class="form-group"><label class="form-label">手机号</label><input type="text" class="form-control" id="newPhone" placeholder="请输入手机号"></div>
+        <div class="form-group"><label class="form-label">QQ号</label><input type="text" class="form-control" id="newQq" placeholder="请输入QQ号"></div>
+        <div class="form-group"><label class="form-label">身份</label><input type="text" class="form-control" id="newIdentity" placeholder="如：班长、学习委员等"></div>
+        <div class="form-group"><label class="form-label">班级代码</label><input type="text" class="form-control" id="newClassCode" placeholder="请输入班级代码"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('createUserModal')">取消</button><button class="btn btn-primary" onclick="createUser()">创建</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+      <div class="modal-header"><h2 class="modal-title">编辑用户</h2><button class="modal-close" onclick="closeModal('editUserModal')">×</button></div>
+      <div class="modal-body" id="editUserBody"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('editUserModal')">取消</button><button class="btn btn-primary" onclick="updateUser()">保存</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="announcementModal">
+    <div class="modal">
+      <div class="modal-header"><h2 class="modal-title">发布公告</h2><button class="modal-close" onclick="closeModal('announcementModal')">×</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">标题 *</label><input type="text" class="form-control" id="annTitle" placeholder="公告标题"></div>
+        <div class="form-group"><label class="form-label">内容 *</label><textarea class="form-control" id="annContent" rows="4" placeholder="公告内容"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('announcementModal')">取消</button><button class="btn btn-primary" onclick="createAnnouncement()">发布</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="kbModal">
+    <div class="modal">
+      <div class="modal-header"><h2 class="modal-title">添加知识条目</h2><button class="modal-close" onclick="closeModal('kbModal')">×</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">分类 *</label><input type="text" class="form-control" id="kbCategory" placeholder="如：系统介绍"></div>
+        <div class="form-group"><label class="form-label">问题 *</label><input type="text" class="form-control" id="kbQuestion" placeholder="问题内容"></div>
+        <div class="form-group"><label class="form-label">答案 *</label><textarea class="form-control" id="kbAnswer" rows="4" placeholder="答案内容"></textarea></div>
+        <div class="form-group"><label class="form-label">关键词</label><input type="text" class="form-control" id="kbKeywords" placeholder="逗号分隔，如：系统,介绍,功能"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('kbModal')">取消</button><button class="btn btn-primary" onclick="addKbItem()">添加</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="editKbModal">
+    <div class="modal">
+      <div class="modal-header"><h2 class="modal-title">编辑知识条目</h2><button class="modal-close" onclick="closeModal('editKbModal')">×</button></div>
+      <div class="modal-body" id="editKbBody"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('editKbModal')">取消</button><button class="btn btn-primary" onclick="updateKbItem()">保存</button></div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

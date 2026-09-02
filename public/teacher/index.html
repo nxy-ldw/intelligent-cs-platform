@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>教师端 - 智能客服系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/common.css">
+  <style>
+    .mobile-menu-btn { display: none; position: fixed; top: 16px; left: 16px; z-index: 200; width: 40px; height: 40px; background: white; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; font-size: 20px; align-items: center; justify-content: center; }
+    @media (max-width: 1024px) { .mobile-menu-btn { display: flex; } }
+    .class-code-box {
+      background: var(--gradient-card);
+      border: 2px dashed var(--primary-light);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .class-code-value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: var(--primary);
+      font-family: 'Courier New', monospace;
+    }
+    .identity-select {
+      padding: 6px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      background: white;
+    }
+    .identity-select:focus { outline: none; border-color: var(--primary); }
+    .student-detail-modal .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+    .student-detail-modal .detail-label { color: var(--text-light); }
+    .student-detail-modal .detail-value { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">🤖</div>
+        <div class="brand-text">智能客服系统<small>教师端</small></div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">教学管理</div>
+          <div class="nav-item active" onclick="switchSection('dashboard', this)">
+            <span class="nav-icon">🏠</span><span>仪表盘</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('classes', this)">
+            <span class="nav-icon">🏫</span><span>班级管理</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('students', this)">
+            <span class="nav-icon">👥</span><span>学生管理</span>
+          </div>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">项目内容</div>
+          <div class="nav-item" onclick="switchSection('project', this)">
+            <span class="nav-icon">📋</span><span>立项内容</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('chat', this)">
+            <span class="nav-icon">💬</span><span>AI对话</span>
+          </div>
+          <div class="nav-item" onclick="switchSection('knowledge', this)">
+            <span class="nav-icon">📚</span><span>知识库</span>
+          </div>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user" onclick="logout()">
+          <div class="avatar" id="userAvatar">T</div>
+          <div class="user-info">
+            <div class="user-name" id="userName">教师</div>
+            <div class="user-role">退出登录</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div id="dashboard" class="content-section active">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">仪表盘</h1>
+            <p class="page-subtitle">教学管理概览</p>
+          </div>
+          <button class="btn btn-primary" onclick="switchSection('classes', document.querySelectorAll('.nav-item')[1])">创建班级</button>
+        </div>
+        <div class="stat-grid" id="statsGrid"></div>
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">最近活跃学生</h2>
+          </div>
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>学生</th><th>班级</th><th>身份</th><th>状态</th><th>加入时间</th></tr></thead>
+                <tbody id="recentStudents"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="classes" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">班级管理</h1>
+            <p class="page-subtitle">创建班级并生成班级代码</p>
+          </div>
+          <button class="btn btn-primary" onclick="showCreateClassModal()">+ 创建班级</button>
+        </div>
+        <div id="classList"></div>
+      </div>
+
+      <div id="students" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">学生管理</h1>
+            <p class="page-subtitle">管理您班级中的学生</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center;">
+          <select class="form-control" id="classFilter" style="width:auto;min-width:200px;" onchange="loadStudents()">
+            <option value="">全部班级</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrapper">
+              <table>
+                <thead><tr><th>学生</th><th>手机号</th><th>QQ号</th><th>班级</th><th>身份</th><th>状态</th><th>操作</th></tr></thead>
+                <tbody id="studentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="project" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">立项内容</h1>
+            <p class="page-subtitle">智能客服系统项目需求文档</p>
+          </div>
+        </div>
+        <div class="card"><div class="card-body" id="projectInfo"></div></div>
+      </div>
+
+      <div id="chat" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">AI智能对话</h1>
+            <p class="page-subtitle">体验智能客服系统对话功能</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:20px;">
+            <div id="teacherChatContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="knowledge" class="content-section">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">知识库</h1>
+            <p class="page-subtitle">浏览系统知识库</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="kb-categories" id="kbCategories2"></div>
+            <div id="kbList2"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="createClassModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">创建班级</h2>
+        <button class="modal-close" onclick="closeModal('createClassModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">班级名称</label>
+          <input type="text" class="form-control" id="classNameInput" placeholder="如：2026级软件工程1班">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('createClassModal')">取消</button>
+        <button class="btn btn-primary" onclick="createClass()">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="studentDetailModal">
+    <div class="modal student-detail-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">学生详情</h2>
+        <button class="modal-close" onclick="closeModal('studentDetailModal')">×</button>
+      </div>
+      <div class="modal-body" id="studentDetailBody"></div>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/teacher.js"></script>
+</body>
+</html>
