@@ -66,7 +66,7 @@ router.post('/register', (req, res) => {
   if (password.length < 6) {
     return res.status(400).json({ error: '密码长度不能少于6位' });
   }
-  if (!['student', 'teacher'].includes(role)) {
+  if (!['student', 'teacher', 'admin'].includes(role)) {
     return res.status(400).json({ error: '注册角色无效' });
   }
 
