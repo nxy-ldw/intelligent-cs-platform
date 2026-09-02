@@ -17,7 +17,7 @@
       --danger: #ef4444;
       --bg-main: #f1f5f9;
       --bg-card: #ffffff;
-      --bg-sidebar: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      --bg-sidebar: linear-gradient(180deg, #0c4a6e 0%, #0e7490 50%, #0891b2 100%);
       --text-dark: #1e293b;
       --text-medium: #475569;
       --text-light: #94a3b8;
@@ -592,6 +592,737 @@
       <div class="modal-body" id="studentDetailBody"></div>
     </div>
   </div>
+
+  <script>
+    // ===== Helper Functions =====
+    function showToast(message, type) {
+      if (!type) type = 'info';
+      var container = document.querySelector('.toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+      }
+      var icons = { success: '\u2713', error: '\u2715', warning: '\u26a0', info: '\u2139' };
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.innerHTML = '<span class="toast-icon">' + (icons[type] || '\u2139') + '</span><span class="toast-message">' + message + '</span>';
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.classList.add('removing');
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      var d = new Date(dateStr);
+      function pad(n) { return n < 10 ? '0' + n : '' + n; }
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    function getDifficultyStars(level) {
+      var n = parseInt(level) || 1;
+      var html = '<span class="diff-stars">';
+      for (var i = 1; i <= 5; i++) {
+        html += i <= n ? '\u2605' : '\u2606';
+      }
+      html += '</span>';
+      return html;
+    }
+
+    // ===== Authentication =====
+    var currentUser = null;
+
+    function checkAuth() {
+      var token = localStorage.getItem('token');
+      var userStr = localStorage.getItem('user');
+      if (!token || !userStr) {
+        window.location.href = '/';
+        return;
+      }
+      try {
+        currentUser = JSON.parse(userStr);
+        var nameEl = document.getElementById('topUserName');
+        if (nameEl) nameEl.textContent = currentUser.username || '\u6559\u5e08';
+      } catch (e) {
+        window.location.href = '/';
+      }
+    }
+
+    function logout() {
+      if (confirm('\u786e\u5b9a\u8981\u9000\u51fa\u767b\u5f55\u5417\uff1f')) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+    }
+
+    // ===== API Helper =====
+    async function apiCall(url, method, body) {
+      var token = localStorage.getItem('token');
+      var options = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
+      if (token) options.headers['Authorization'] = 'Bearer ' + token;
+      if (body) options.body = JSON.stringify(body);
+      var res = await fetch(url, options);
+      var data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/';
+          return;
+        }
+        throw new Error(data.error || data.message || '\u8bf7\u6c42\u5931\u8d25');
+      }
+      return data;
+    }
+
+    // ===== Navigation =====
+    function switchSection(name, el) {
+      document.querySelectorAll('.content-section').forEach(function(s) { s.classList.remove('active'); });
+      document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+      var section = document.getElementById(name);
+      if (section) section.classList.add('active');
+      if (el) el.classList.add('active');
+      var sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.classList.remove('open');
+      if (name === 'classes') loadClasses();
+      else if (name === 'students') { loadStudentFilters(); loadStudents(); }
+      else if (name === 'questions') { loadQuestionFilters(); loadQuestions(); }
+      else if (name === 'knowledgePoints') loadKnowledgePoints();
+      else if (name === 'tasks') loadTasks();
+      else if (name === 'diagnosis') loadDiagnosisFilters();
+    }
+
+    // ===== Modal Helpers =====
+    function openModal(id) {
+      var modal = document.getElementById(id);
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeModal(id) {
+      var modal = document.getElementById(id);
+      if (modal) modal.classList.remove('active');
+    }
+
+    // ===== Class Management =====
+    var classesCache = [];
+
+    async function loadClasses() {
+      var container = document.getElementById('classList');
+      try {
+        var data = await apiCall('/api/teacher/classes');
+        classesCache = data.classes || [];
+        if (classesCache.length === 0) {
+          container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\uD83D\uDCDA</div><div class="empty-text">\u6682\u65e0\u73ed\u7ea7</div><div class="empty-desc">\u70b9\u51fb\u53f3\u4e0a\u89d2\u521b\u5efa\u60a8\u7684\u7b2c\u4e00\u4e2a\u73ed\u7ea7</div></div></div>';
+          return;
+        }
+        var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">';
+        classesCache.forEach(function(c) {
+          html += '<div class="card"><div class="card-body">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">' +
+            '<div><div style="font-size:16px;font-weight:700;color:var(--text-dark);">' + escapeHtml(c.class_name) + '</div>' +
+            '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">\u521b\u5efa\u4e8e ' + formatDate(c.created_at) + '</div></div>' +
+            '<span class="badge badge-primary">' + (c.studentCount || 0) + ' \u4eba</span></div>' +
+            '<div class="class-code-box"><div style="font-size:11px;color:var(--text-light);margin-bottom:4px;">\u73ed\u7ea7\u4ee3\u7801</div>' +
+            '<div class="class-code-value">' + escapeHtml(c.class_code) + '</div></div>' +
+            '</div></div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\u26a0\ufe0f</div><div class="empty-text">\u52a0\u8f7d\u5931\u8d25</div><div class="empty-desc">' + escapeHtml(err.message) + '</div></div></div>';
+      }
+    }
+
+    function showCreateClassModal() {
+      var input = document.getElementById('classNameInput');
+      if (input) input.value = '';
+      openModal('createClassModal');
+    }
+
+    async function createClass() {
+      var className = document.getElementById('classNameInput').value.trim();
+      if (!className) { showToast('\u8bf7\u8f93\u5165\u73ed\u7ea7\u540d\u79f0', 'warning'); return; }
+      try {
+        var data = await apiCall('/api/teacher/create-class', 'POST', { className: className });
+        showToast('\u73ed\u7ea7\u521b\u5efa\u6210\u529f\uff0c\u4ee3\u7801\uff1a' + data.classCode, 'success');
+        closeModal('createClassModal');
+        loadClasses();
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    async function showBatchAddModal() {
+      document.getElementById('batchResult').style.display = 'none';
+      document.getElementById('batchStudentList').innerHTML = '';
+      addBatchRow();
+      if (classesCache.length === 0) {
+        try {
+          var data = await apiCall('/api/teacher/classes');
+          classesCache = data.classes || [];
+        } catch (e) {}
+      }
+      var select = document.getElementById('batchClassSelect');
+      select.innerHTML = '<option value="">\u8bf7\u9009\u62e9\u73ed\u7ea7</option>';
+      classesCache.forEach(function(c) {
+        select.innerHTML += '<option value="' + escapeHtml(c.class_code) + '">' + escapeHtml(c.class_name) + ' (' + escapeHtml(c.class_code) + ')</option>';
+      });
+      openModal('batchAddModal');
+    }
+
+    function addBatchRow() {
+      var container = document.getElementById('batchStudentList');
+      var row = document.createElement('div');
+      row.className = 'batch-student-row';
+      row.innerHTML = '<input type="text" class="form-control" placeholder="\u5b66\u751f\u7528\u6237\u540d" data-field="username">' +
+        '<input type="text" class="form-control" placeholder="\u5bc6\u7801" data-field="password">' +
+        '<button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">\u5220\u9664</button>';
+      container.appendChild(row);
+    }
+
+    async function batchAddStudents() {
+      var classCode = document.getElementById('batchClassSelect').value;
+      if (!classCode) { showToast('\u8bf7\u9009\u62e9\u73ed\u7ea7', 'warning'); return; }
+      var rows = document.querySelectorAll('#batchStudentList .batch-student-row');
+      var students = [];
+      rows.forEach(function(r) {
+        var username = r.querySelector('[data-field="username"]').value.trim();
+        var password = r.querySelector('[data-field="password"]').value.trim();
+        if (username && password) students.push({ username: username, password: password });
+      });
+      if (students.length === 0) { showToast('\u8bf7\u81f3\u5c11\u586b\u5199\u4e00\u6761\u5b66\u751f\u4fe1\u606f', 'warning'); return; }
+      try {
+        var data = await apiCall('/api/teacher/students/batch-add', 'POST', { classCode: classCode, students: students });
+        var resultDiv = document.getElementById('batchResult');
+        var resultText = document.getElementById('batchResultText');
+        resultDiv.style.display = 'block';
+        var html = '<strong>\u6dfb\u52a0\u5b8c\u6210</strong><br>\u6210\u529f\uff1a' + data.successCount + ' \u4eba\uff0c\u5931\u8d25\uff1a' + data.failCount + ' \u4eba';
+        if (data.failed && data.failed.length > 0) {
+          html += '<br>\u5931\u8d25\u8be6\u60c5\uff1a';
+          data.failed.forEach(function(f, idx) {
+            if (idx > 0) html += '\u3001';
+            html += escapeHtml(f.username || '\u672a\u77e5') + '(' + escapeHtml(f.reason || '') + ')';
+          });
+        }
+        resultText.innerHTML = html;
+        showToast('\u6279\u91cf\u6dfb\u52a0\u5b8c\u6210', 'success');
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== Student Management =====
+    async function loadStudentFilters() {
+      var select = document.getElementById('studentClassFilter');
+      try {
+        if (classesCache.length === 0) {
+          var data = await apiCall('/api/teacher/classes');
+          classesCache = data.classes || [];
+        }
+        select.innerHTML = '<option value="">\u5168\u90e8\u73ed\u7ea7</option>';
+        classesCache.forEach(function(c) {
+          select.innerHTML += '<option value="' + escapeHtml(c.class_code) + '">' + escapeHtml(c.class_name) + '</option>';
+        });
+      } catch (err) { console.error('\u52a0\u8f7d\u73ed\u7ea7\u5931\u8d25', err); }
+    }
+
+    async function loadStudents() {
+      var classCode = document.getElementById('studentClassFilter').value;
+      var keyword = document.getElementById('studentSearch').value.trim().toLowerCase();
+      var body = document.getElementById('studentsBody');
+      var url = '/api/teacher/students';
+      if (classCode) url += '?classCode=' + encodeURIComponent(classCode);
+      try {
+        var data = await apiCall(url);
+        var students = data.students || [];
+        if (keyword) {
+          students = students.filter(function(s) {
+            return (s.username || '').toLowerCase().indexOf(keyword) >= 0;
+          });
+        }
+        if (students.length === 0) {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-light);">\u6682\u65e0\u5b66\u751f</td></tr>';
+          return;
+        }
+        var html = '';
+        students.forEach(function(s) {
+          var status = s.is_banned ? '<span class="badge badge-danger">\u5df2\u7981\u7528</span>' : '<span class="badge badge-success">\u6b63\u5e38</span>';
+          var identity = s.identity ? '<span class="kp-tag">' + escapeHtml(s.identity) + '</span>' : '-';
+          html += '<tr>' +
+            '<td><div style="display:flex;align-items:center;gap:8px;"><div class="sc-avatar" style="width:32px;height:32px;font-size:13px;">' + escapeHtml((s.username || '?').charAt(0).toUpperCase()) + '</div>' + escapeHtml(s.username) + '</div></td>' +
+            '<td><span class="badge badge-secondary">' + escapeHtml(s.class_code || '-') + '</span></td>' +
+            '<td>' + identity + '</td>' +
+            '<td>' + (s.total_answers || 0) + '</td>' +
+            '<td><strong style="color:' + (s.correct_rate >= 60 ? 'var(--success)' : 'var(--danger)') + ';">' + (s.correct_rate || 0) + '%</strong></td>' +
+            '<td>' + status + '</td>' +
+            '<td><button class="btn btn-primary btn-sm" onclick="viewStudent(' + s.id + ')">\u67e5\u770b\u8be6\u60c5</button></td>' +
+            '</tr>';
+        });
+        body.innerHTML = html;
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--danger);">\u52a0\u8f7d\u5931\u8d25\uff1a' + escapeHtml(err.message) + '</td></tr>';
+      }
+    }
+
+    async function viewStudent(id) {
+      var container = document.getElementById('studentDetailBody');
+      container.innerHTML = '<div style="text-align:center;padding:40px;"><div class="loading-spinner"></div><div style="margin-top:10px;">\u52a0\u8f7d\u4e2d...</div></div>';
+      openModal('studentDetailModal');
+      try {
+        var data = await apiCall('/api/teacher/student/' + id + '/detail');
+        var s = data.student;
+        var report = data.report || {};
+        var summary = report.summary || {};
+        var kps = report.knowledge_points || [];
+        var html = '<div class="detail-grid">' +
+          '<div class="detail-item"><div class="di-label">\u5b66\u751f\u59d3\u540d</div><div class="di-value">' + escapeHtml(s.username) + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u73ed\u7ea7\u4ee3\u7801</div><div class="di-value">' + escapeHtml(s.class_code || '-') + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u8eab\u4efd\u6807\u7b7e</div><div class="di-value">' + escapeHtml(s.identity || '-') + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u6ce8\u518c\u65f6\u95f4</div><div class="di-value">' + formatDate(s.created_at) + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u603b\u7b54\u9898\u6570</div><div class="di-value">' + (summary.totalAnswers || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u6b63\u786e\u7387</div><div class="di-value" style="color:var(--primary);">' + (summary.overallAccuracy || 0) + '%</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u9519\u9898\u6570</div><div class="di-value">' + (data.wrongCount || 0) + '</div></div>' +
+          '<div class="detail-item"><div class="di-label">\u8584\u5f31\u77e5\u8bc6\u70b9</div><div class="di-value" style="color:var(--danger);">' + (summary.weakCount || 0) + '</div></div>' +
+          '</div>';
+        if (kps.length > 0) {
+          html += '<h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--text-dark);">\u77e5\u8bc6\u70b9\u638c\u63e1\u60c5\u51b5</h3>';
+          kps.forEach(function(kp) {
+            html += '<div class="kp-mastery-item"><div class="kpm-header"><span class="kpm-name">' + escapeHtml(kp.kp_name) + '</span><span class="kpm-score" style="color:' + (kp.color || '#94a3b8') + ';">' + (kp.score || 0) + '% ' + escapeHtml(kp.label || '') + '</span></div>' +
+              '<div class="progress-bar"><div class="progress-fill" style="width:' + (kp.score || 0) + '%;background:' + (kp.color || 'var(--gradient-primary)') + ';"></div></div></div>';
+          });
+        }
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);">\u52a0\u8f7d\u5931\u8d25\uff1a' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    // ===== Question Management =====
+    var questionsCache = [];
+    var knowledgePointsCache = [];
+    var qType = 'single';
+    var qDebounceTimer = null;
+
+    async function loadQuestionFilters() {
+      try {
+        var data = await apiCall('/api/teacher/knowledge-points');
+        knowledgePointsCache = data.knowledgePoints || [];
+        var filterSelect = document.getElementById('qKpFilter');
+        filterSelect.innerHTML = '<option value="">\u5168\u90e8\u77e5\u8bc6\u70b9</option>';
+        knowledgePointsCache.forEach(function(kp) {
+          filterSelect.innerHTML += '<option value="' + kp.id + '">' + escapeHtml(kp.name) + '</option>';
+        });
+        var modalSelect = document.getElementById('qKpSelect');
+        modalSelect.innerHTML = '<option value="">\u8bf7\u9009\u62e9\u77e5\u8bc6\u70b9</option>';
+        knowledgePointsCache.forEach(function(kp) {
+          modalSelect.innerHTML += '<option value="' + kp.id + '">' + escapeHtml(kp.name) + '</option>';
+        });
+      } catch (err) { console.error('\u52a0\u8f7d\u77e5\u8bc6\u70b9\u5931\u8d25', err); }
+    }
+
+    async function loadQuestions() {
+      var kpId = document.getElementById('qKpFilter').value;
+      var difficulty = document.getElementById('qDiffFilter').value;
+      var keyword = document.getElementById('qKeyword').value.trim();
+      var body = document.getElementById('questionsBody');
+      var url = '/api/teacher/questions?';
+      if (kpId) url += 'kpId=' + encodeURIComponent(kpId) + '&';
+      if (difficulty) url += 'difficulty=' + encodeURIComponent(difficulty) + '&';
+      if (keyword) url += 'keyword=' + encodeURIComponent(keyword) + '&';
+      try {
+        var data = await apiCall(url);
+        questionsCache = data.questions || [];
+        document.getElementById('qTotalCount').textContent = '\u5171 ' + (data.total || questionsCache.length) + ' \u9898';
+        if (questionsCache.length === 0) {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-light);">\u6682\u65e0\u9898\u76ee</td></tr>';
+          return;
+        }
+        var typeNames = { single: '\u5355\u9009\u9898', multi: '\u591a\u9009\u9898', judge: '\u5224\u65ad\u9898', fill: '\u586b\u7a7a\u9898' };
+        var html = '';
+        questionsCache.forEach(function(q) {
+          html += '<tr>' +
+            '<td>' + q.id + '</td>' +
+            '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(q.question) + '">' + escapeHtml(q.question) + '</td>' +
+            '<td><span class="kp-tag">' + escapeHtml(q.kp_name || '-') + '</span></td>' +
+            '<td><span class="badge badge-info">' + (typeNames[q.type] || q.type || '-') + '</span></td>' +
+            '<td>' + getDifficultyStars(q.difficulty) + '</td>' +
+            '<td><strong>' + escapeHtml(q.answer || '-') + '</strong></td>' +
+            '<td><button class="btn btn-primary btn-sm" onclick="showQuestionModal(' + q.id + ')">\u7f16\u8f91</button></td>' +
+            '</tr>';
+        });
+        body.innerHTML = html;
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--danger);">\u52a0\u8f7d\u5931\u8d25\uff1a' + escapeHtml(err.message) + '</td></tr>';
+      }
+    }
+
+    function debounceLoadQuestions() {
+      clearTimeout(qDebounceTimer);
+      qDebounceTimer = setTimeout(function() { loadQuestions(); }, 300);
+    }
+
+    function showQuestionModal(id) {
+      document.getElementById('qEditId').value = '';
+      document.getElementById('questionModalTitle').textContent = '\u6dfb\u52a0\u9898\u76ee';
+      document.getElementById('qQuestion').value = '';
+      document.getElementById('qOptions').value = '';
+      document.getElementById('qAnswer').value = '';
+      document.getElementById('qAnalysis').value = '';
+      document.getElementById('qDifficulty').value = '2';
+      setQType('single');
+      if (id) {
+        document.getElementById('questionModalTitle').textContent = '\u7f16\u8f91\u9898\u76ee';
+        var q = null;
+        for (var i = 0; i < questionsCache.length; i++) {
+          if (questionsCache[i].id == id) { q = questionsCache[i]; break; }
+        }
+        if (q) {
+          document.getElementById('qEditId').value = q.id;
+          document.getElementById('qKpSelect').value = q.kp_id;
+          document.getElementById('qDifficulty').value = q.difficulty || 2;
+          setQType(q.type || 'single');
+          document.getElementById('qQuestion').value = q.question || '';
+          document.getElementById('qOptions').value = q.options || '';
+          document.getElementById('qAnswer').value = q.answer || '';
+          document.getElementById('qAnalysis').value = q.analysis || '';
+        }
+      }
+      openModal('questionModal');
+    }
+
+    function setQType(type) {
+      qType = type;
+      document.querySelectorAll('.q-type-tab').forEach(function(t) {
+        if (t.getAttribute('data-type') === type) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+    }
+
+    async function saveQuestion() {
+      var id = document.getElementById('qEditId').value;
+      var kpId = document.getElementById('qKpSelect').value;
+      var difficulty = document.getElementById('qDifficulty').value;
+      var question = document.getElementById('qQuestion').value.trim();
+      var options = document.getElementById('qOptions').value.trim();
+      var answer = document.getElementById('qAnswer').value.trim();
+      var analysis = document.getElementById('qAnalysis').value.trim();
+      var kpSelect = document.getElementById('qKpSelect');
+      var kpName = kpSelect.selectedIndex >= 0 ? kpSelect.options[kpSelect.selectedIndex].textContent : '';
+      if (!kpId) { showToast('\u8bf7\u9009\u62e9\u77e5\u8bc6\u70b9', 'warning'); return; }
+      if (!question) { showToast('\u8bf7\u8f93\u5165\u9898\u5e72', 'warning'); return; }
+      if (!answer) { showToast('\u8bf7\u8f93\u5165\u6b63\u786e\u7b54\u6848', 'warning'); return; }
+      var reqBody = {
+        kp_id: parseInt(kpId),
+        kp_name: kpName,
+        difficulty: parseInt(difficulty),
+        type: qType,
+        question: question,
+        options: options || '[]',
+        answer: answer,
+        analysis: analysis
+      };
+      try {
+        if (id) {
+          await apiCall('/api/teacher/questions/' + id, 'PUT', reqBody);
+          showToast('\u9898\u76ee\u5df2\u66f4\u65b0', 'success');
+        } else {
+          await apiCall('/api/teacher/questions', 'POST', reqBody);
+          showToast('\u9898\u76ee\u6dfb\u52a0\u6210\u529f', 'success');
+        }
+        closeModal('questionModal');
+        loadQuestions();
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== Knowledge Point Management =====
+    async function loadKnowledgePoints() {
+      var body = document.getElementById('kpBody');
+      try {
+        var data = await apiCall('/api/teacher/knowledge-points');
+        knowledgePointsCache = data.knowledgePoints || [];
+        if (knowledgePointsCache.length === 0) {
+          body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-light);">\u6682\u65e0\u77e5\u8bc6\u70b9</td></tr>';
+          return;
+        }
+        var html = '';
+        knowledgePointsCache.forEach(function(kp) {
+          html += '<tr>' +
+            '<td>' + kp.id + '</td>' +
+            '<td><strong>' + escapeHtml(kp.name) + '</strong></td>' +
+            '<td>' + escapeHtml(kp.subject || '-') + '</td>' +
+            '<td>' + getDifficultyStars(kp.difficulty) + '</td>' +
+            '<td>' + escapeHtml(kp.prerequisites || '-') + '</td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(kp.description) + '">' + escapeHtml(kp.description || '-') + '</td>' +
+            '<td><button class="btn btn-primary btn-sm" onclick="showKpModal(' + kp.id + ')">\u7f16\u8f91</button></td>' +
+            '</tr>';
+        });
+        body.innerHTML = html;
+      } catch (err) {
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--danger);">\u52a0\u8f7d\u5931\u8d25\uff1a' + escapeHtml(err.message) + '</td></tr>';
+      }
+    }
+
+    function showKpModal(id) {
+      document.getElementById('kpEditId').value = '';
+      document.getElementById('kpModalTitle').textContent = '\u6dfb\u52a0\u77e5\u8bc6\u70b9';
+      document.getElementById('kpName').value = '';
+      document.getElementById('kpSubject').value = '\u6570\u5b66';
+      document.getElementById('kpDifficulty').value = '2';
+      document.getElementById('kpPrerequisites').value = '';
+      document.getElementById('kpDescription').value = '';
+      if (id) {
+        document.getElementById('kpModalTitle').textContent = '\u7f16\u8f91\u77e5\u8bc6\u70b9';
+        var kp = null;
+        for (var i = 0; i < knowledgePointsCache.length; i++) {
+          if (knowledgePointsCache[i].id == id) { kp = knowledgePointsCache[i]; break; }
+        }
+        if (kp) {
+          document.getElementById('kpEditId').value = kp.id;
+          document.getElementById('kpName').value = kp.name || '';
+          document.getElementById('kpSubject').value = kp.subject || '\u6570\u5b66';
+          document.getElementById('kpDifficulty').value = kp.difficulty || 2;
+          document.getElementById('kpPrerequisites').value = kp.prerequisites || '';
+          document.getElementById('kpDescription').value = kp.description || '';
+        }
+      }
+      openModal('kpModal');
+    }
+
+    async function saveKp() {
+      var id = document.getElementById('kpEditId').value;
+      var name = document.getElementById('kpName').value.trim();
+      var subject = document.getElementById('kpSubject').value.trim();
+      var difficulty = document.getElementById('kpDifficulty').value;
+      var prerequisites = document.getElementById('kpPrerequisites').value.trim();
+      var description = document.getElementById('kpDescription').value.trim();
+      if (!name) { showToast('\u8bf7\u8f93\u5165\u77e5\u8bc6\u70b9\u540d\u79f0', 'warning'); return; }
+      var reqBody = {
+        name: name,
+        subject: subject || '\u6570\u5b66',
+        difficulty: parseInt(difficulty),
+        prerequisites: prerequisites,
+        description: description
+      };
+      try {
+        if (id) {
+          await apiCall('/api/teacher/knowledge-points/' + id, 'PUT', reqBody);
+          showToast('\u77e5\u8bc6\u70b9\u5df2\u66f4\u65b0', 'success');
+        } else {
+          await apiCall('/api/teacher/knowledge-points', 'POST', reqBody);
+          showToast('\u77e5\u8bc6\u70b9\u6dfb\u52a0\u6210\u529f', 'success');
+        }
+        closeModal('kpModal');
+        loadKnowledgePoints();
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== Task Management =====
+    async function loadTasks() {
+      var container = document.getElementById('taskList');
+      try {
+        var data = await apiCall('/api/teacher/tasks');
+        var tasks = data.tasks || [];
+        if (tasks.length === 0) {
+          container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\uD83D\uDCCB</div><div class="empty-text">\u6682\u65e0\u4efb\u52a1</div><div class="empty-desc">\u70b9\u51fb\u53f3\u4e0a\u89d2\u521b\u5efa\u7ec3\u4e60\u4efb\u52a1</div></div></div>';
+          return;
+        }
+        var html = '';
+        tasks.forEach(function(t) {
+          var progress = t.student_count > 0 ? Math.round((t.completed_count || 0) / t.student_count * 100) : 0;
+          var statusBadge = t.is_active ? '<span class="badge badge-success">\u8fdb\u884c\u4e2d</span>' : '<span class="badge badge-secondary">\u5df2\u7ed3\u675f</span>';
+          html += '<div class="card" style="margin-bottom:12px;"><div class="card-body">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+            '<div><div style="font-size:15px;font-weight:700;color:var(--text-dark);">' + escapeHtml(t.title || '\u7ec3\u4e60\u4efb\u52a1') + '</div>' +
+            '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">\u73ed\u7ea7\uff1a' + escapeHtml(t.class_code) + ' \u00b7 \u9898\u76ee\u6570\uff1a' + (t.question_count || 0) + ' \u00b7 \u622a\u6b62\uff1a' + (t.deadline ? formatDate(t.deadline) : '\u65e0') + '</div></div>' +
+            statusBadge + '</div>' +
+            (t.description ? '<div style="font-size:13px;color:var(--text-medium);margin-bottom:8px;">' + escapeHtml(t.description) + '</div>' : '') +
+            '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-light);">' +
+            '<span>\u5b8c\u6210\uff1a' + (t.completed_count || 0) + '/' + (t.student_count || 0) + ' \u5b66\u751f</span>' +
+            '<span>' + progress + '%</span></div>' +
+            '<div class="progress-bar" style="margin-top:4px;"><div class="progress-fill" style="width:' + progress + '%;"></div></div>' +
+            '</div></div>';
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\u26a0\ufe0f</div><div class="empty-text">\u52a0\u8f7d\u5931\u8d25</div><div class="empty-desc">' + escapeHtml(err.message) + '</div></div></div>';
+      }
+    }
+
+    async function showTaskModal() {
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskDeadline').value = '';
+      document.getElementById('taskQuestionList').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light);font-size:13px;">\u8bf7\u5148\u9009\u62e9\u73ed\u7ea7\u52a0\u8f7d\u9898\u76ee</div>';
+      document.getElementById('taskSelectedCount').textContent = '(\u5df2\u90090\u9898)';
+      if (classesCache.length === 0) {
+        try {
+          var data = await apiCall('/api/teacher/classes');
+          classesCache = data.classes || [];
+        } catch (e) {}
+      }
+      var select = document.getElementById('taskClassSelect');
+      select.innerHTML = '<option value="">\u8bf7\u9009\u62e9\u73ed\u7ea7</option>';
+      classesCache.forEach(function(c) {
+        select.innerHTML += '<option value="' + escapeHtml(c.class_code) + '">' + escapeHtml(c.class_name) + ' (' + escapeHtml(c.class_code) + ')</option>';
+      });
+      openModal('taskModal');
+    }
+
+    async function loadTaskQuestions() {
+      var classCode = document.getElementById('taskClassSelect').value;
+      var container = document.getElementById('taskQuestionList');
+      if (!classCode) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light);font-size:13px;">\u8bf7\u5148\u9009\u62e9\u73ed\u7ea7\u52a0\u8f7d\u9898\u76ee</div>';
+        return;
+      }
+      container.innerHTML = '<div style="text-align:center;padding:24px;"><div class="loading-spinner"></div></div>';
+      try {
+        var data = await apiCall('/api/teacher/questions');
+        var questions = data.questions || [];
+        if (questions.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-light);font-size:13px;">\u6682\u65e0\u9898\u76ee</div>';
+          return;
+        }
+        var html = '';
+        questions.forEach(function(q) {
+          html += '<div style="padding:8px;border-bottom:1px solid var(--border-color);">' +
+            '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">' +
+            '<input type="checkbox" value="' + q.id + '" onchange="updateTaskSelectedCount()" style="margin-top:4px;">' +
+            '<div><div style="font-size:13px;color:var(--text-dark);">' + escapeHtml(q.question) + '</div>' +
+            '<div style="font-size:11px;color:var(--text-light);margin-top:2px;">' + escapeHtml(q.kp_name || '') + ' \u00b7 ' + getDifficultyStars(q.difficulty) + '</div></div>' +
+            '</label></div>';
+        });
+        container.innerHTML = html;
+        updateTaskSelectedCount();
+      } catch (err) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--danger);font-size:13px;">\u52a0\u8f7d\u5931\u8d25\uff1a' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function updateTaskSelectedCount() {
+      var checked = document.querySelectorAll('#taskQuestionList input[type="checkbox"]:checked');
+      document.getElementById('taskSelectedCount').textContent = '(\u5df2\u9009' + checked.length + '\u9898)';
+    }
+
+    async function createTask() {
+      var classCode = document.getElementById('taskClassSelect').value;
+      var title = document.getElementById('taskTitle').value.trim();
+      var description = document.getElementById('taskDesc').value.trim();
+      var deadline = document.getElementById('taskDeadline').value;
+      var checkboxes = document.querySelectorAll('#taskQuestionList input[type="checkbox"]:checked');
+      var questionIds = [];
+      checkboxes.forEach(function(cb) { questionIds.push(parseInt(cb.value)); });
+      if (!classCode) { showToast('\u8bf7\u9009\u62e9\u73ed\u7ea7', 'warning'); return; }
+      if (!title) { showToast('\u8bf7\u8f93\u5165\u4efb\u52a1\u6807\u9898', 'warning'); return; }
+      if (questionIds.length === 0) { showToast('\u8bf7\u81f3\u5c11\u9009\u62e9\u4e00\u9053\u9898\u76ee', 'warning'); return; }
+      try {
+        await apiCall('/api/teacher/tasks', 'POST', {
+          classCode: classCode,
+          title: title,
+          description: description,
+          questionIds: questionIds,
+          deadline: deadline || null
+        });
+        showToast('\u4efb\u52a1\u53d1\u5e03\u6210\u529f', 'success');
+        closeModal('taskModal');
+        loadTasks();
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== Class Diagnosis =====
+    async function loadDiagnosisFilters() {
+      var select = document.getElementById('diagClassFilter');
+      try {
+        if (classesCache.length === 0) {
+          var data = await apiCall('/api/teacher/classes');
+          classesCache = data.classes || [];
+        }
+        select.innerHTML = '<option value="">\u9009\u62e9\u73ed\u7ea7</option>';
+        classesCache.forEach(function(c) {
+          select.innerHTML += '<option value="' + escapeHtml(c.class_code) + '">' + escapeHtml(c.class_name) + '</option>';
+        });
+      } catch (err) { console.error('\u52a0\u8f7d\u73ed\u7ea7\u5931\u8d25', err); }
+    }
+
+    async function loadClassDiagnosis() {
+      var classCode = document.getElementById('diagClassFilter').value;
+      var container = document.getElementById('diagnosisContent');
+      if (!classCode) {
+        container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\uD83D\uDCCA</div><div class="empty-text">\u8bf7\u5148\u9009\u62e9\u4e00\u4e2a\u73ed\u7ea7\u67e5\u770b\u5b66\u60c5</div></div></div>';
+        return;
+      }
+      container.innerHTML = '<div style="text-align:center;padding:40px;"><div class="loading-spinner"></div><div style="margin-top:10px;">\u6b63\u5728\u751f\u6210\u8bca\u65ad\u62a5\u544a...</div></div>';
+      try {
+        var data = await apiCall('/api/teacher/class-diagnosis/' + encodeURIComponent(classCode));
+        if (!data) {
+          container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\uD83D\uDCED</div><div class="empty-text">\u8be5\u73ed\u7ea7\u6682\u65e0\u5b66\u751f\u6570\u636e</div></div></div>';
+          return;
+        }
+        var html = '<div class="stats-row">' +
+          '<div class="stat-mini-card"><div class="stat-mini-label">\u5b66\u751f\u4eba\u6570</div><div class="stat-mini-value">' + (data.student_count || 0) + '</div></div>' +
+          '<div class="stat-mini-card"><div class="stat-mini-label">\u603b\u7b54\u9898\u6570</div><div class="stat-mini-value">' + (data.total_answers || 0) + '</div></div>' +
+          '<div class="stat-mini-card"><div class="stat-mini-label">\u6b63\u786e\u7387</div><div class="stat-mini-value" style="color:var(--primary);">' + (data.overall_accuracy || 0) + '%</div></div>' +
+          '<div class="stat-mini-card"><div class="stat-mini-label">\u8584\u5f31\u77e5\u8bc6\u70b9</div><div class="stat-mini-value" style="color:var(--danger);">' + (data.weak_points ? data.weak_points.length : 0) + '</div></div>' +
+          '</div>';
+        var kps = data.knowledge_points || [];
+        if (kps.length > 0) {
+          html += '<div class="card" style="margin-bottom:16px;"><div class="card-header"><h2 class="card-title">\u77e5\u8bc6\u70b9\u638c\u63e1\u60c5\u51b5</h2></div><div class="card-body">';
+          kps.forEach(function(kp) {
+            html += '<div class="kp-mastery-item"><div class="kpm-header"><span class="kpm-name">' + escapeHtml(kp.kp_name) + '</span><span class="kpm-score" style="color:' + (kp.color || '#94a3b8') + ';">' + (kp.avgScore || 0) + '% ' + escapeHtml(kp.label || '') + '</span></div>' +
+              '<div class="progress-bar"><div class="progress-fill" style="width:' + (kp.avgScore || 0) + '%;background:' + (kp.color || 'var(--gradient-primary)') + ';"></div></div></div>';
+          });
+          html += '</div></div>';
+        }
+        var topWrong = data.top_wrong || [];
+        if (topWrong.length > 0) {
+          html += '<div class="card"><div class="card-header"><h2 class="card-title">\u9ad8\u9891\u9519\u9898</h2></div><div class="card-body">';
+          topWrong.forEach(function(q) {
+            html += '<div class="wrong-q-item">' +
+              '<div class="wq-header"><div style="font-size:13px;font-weight:600;color:var(--text-dark);">' + escapeHtml(q.kp_name || '') + ' \u00b7 ' + getDifficultyStars(q.difficulty) + '</div>' +
+              '<span class="wq-rate">\u9519 ' + (q.wrong_count || 0) + ' \u6b21 (' + (q.wrong_rate || 0) + '%)</span></div>' +
+              '<div class="wq-text">' + escapeHtml(q.question || '') + '</div>' +
+              '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">\u6b63\u786e\u7b54\u6848\uff1a<strong style="color:var(--success);">' + escapeHtml(q.answer || '') + '</strong></div>' +
+              '</div>';
+          });
+          html += '</div></div>';
+        }
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = '<div class="card"><div class="card-body empty-state"><div class="empty-icon">\u26a0\ufe0f</div><div class="empty-text">\u8bca\u65ad\u5931\u8d25</div><div class="empty-desc">' + escapeHtml(err.message) + '</div></div></div>';
+      }
+    }
+
+    // ===== Profile =====
+    async function changePassword() {
+      var oldPassword = document.getElementById('oldPassword').value;
+      var newPassword = document.getElementById('newPassword').value;
+      var confirmPassword = document.getElementById('confirmPassword').value;
+      if (!oldPassword) { showToast('\u8bf7\u8f93\u5165\u5f53\u524d\u5bc6\u7801', 'warning'); return; }
+      if (!newPassword) { showToast('\u8bf7\u8f93\u5165\u65b0\u5bc6\u7801', 'warning'); return; }
+      if (newPassword.length < 6) { showToast('\u65b0\u5bc6\u7801\u957f\u5ea6\u4e0d\u80fd\u5c11\u4e8e6\u4f4d', 'warning'); return; }
+      if (newPassword !== confirmPassword) { showToast('\u4e24\u6b21\u8f93\u5165\u7684\u65b0\u5bc6\u7801\u4e0d\u4e00\u81f4', 'warning'); return; }
+      try {
+        await apiCall('/api/auth/password', 'PUT', { oldPassword: oldPassword, newPassword: newPassword });
+        showToast('\u5bc6\u7801\u4fee\u6539\u6210\u529f', 'success');
+        document.getElementById('oldPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmPassword').value = '';
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== Init =====
+    checkAuth();
+    loadClasses();
+  </script>
 
 </body>
 </html>

@@ -7,10 +7,10 @@
   <title>学生端 - 智能学习平台</title>
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #818cf8;
-      --secondary: #8b5cf6;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --primary-light: #60a5fa;
+      --secondary: #06b6d4;
       --accent: #06b6d4;
       --accent-light: #67e8f9;
       --success: #10b981;
@@ -18,7 +18,7 @@
       --danger: #ef4444;
       --bg-main: #f1f5f9;
       --bg-card: #ffffff;
-      --bg-sidebar: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      --bg-sidebar: linear-gradient(180deg, #0c4a6e 0%, #0e7490 50%, #0891b2 100%);
       --text-dark: #1e293b;
       --text-medium: #475569;
       --text-light: #94a3b8;
@@ -31,9 +31,9 @@
       --radius-md: 12px;
       --radius-lg: 16px;
       --radius-xl: 24px;
-      --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
-      --gradient-purple: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-      --gradient-card: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 50%, rgba(6,182,212,0.08) 100%);
+      --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #2dd4bf 100%);
+      --gradient-purple: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+      --gradient-card: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(6,182,212,0.05) 50%, rgba(45,212,191,0.08) 100%);
       --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1800,7 +1800,7 @@
       ctx.closePath();
       ctx.fillStyle = grad;
       ctx.fill();
-      ctx.strokeStyle = '#6366f1';
+      ctx.strokeStyle = '#3b82f6';
       ctx.lineWidth = 2;
       ctx.stroke();
       for (var m = 0; m < n; m++) {
@@ -1813,7 +1813,7 @@
         ctx.arc(pmx, pmy, 4, 0, Math.PI * 2);
         ctx.fillStyle = 'white';
         ctx.fill();
-        ctx.strokeStyle = '#6366f1';
+        ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
         ctx.stroke();
       }
@@ -1844,7 +1844,7 @@
       var W = rect.width, H = rect.height;
       var cx = W / 2 - 40, cy = H / 2;
       var r = Math.min(W * 0.35, H * 0.35);
-      var colors = ['#ef4444', '#f59e0b', '#6366f1', '#8b5cf6', '#06b6d4', '#10b981'];
+      var colors = ['#ef4444', '#f59e0b', '#3b82f6', '#06b6d4', '#2dd4bf', '#10b981'];
       var total = errorAnalysis.reduce(function(sum, e) { return sum + (e.count || 0); }, 0);
       if (total === 0) {
         ctx.fillStyle = '#94a3b8';

@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { authMiddleware, roleMiddleware } = require('../middleware/auth');
 const ai = require('../services/aiDiagnosis');
+const extBank = require('../services/externalQuestionBank');
 
 router.use(authMiddleware);
 
@@ -201,6 +202,29 @@ router.get('/class-diagnosis/:classCode', roleMiddleware('teacher'), (req, res) 
 router.get('/student-diagnosis/:studentId', roleMiddleware('teacher'), (req, res) => {
   const report = ai.generateDiagnosisReport(req.params.studentId);
   res.json(report);
+});
+
+router.get('/question-bank/sources', roleMiddleware('teacher', 'admin'), (req, res) => {
+  res.json(extBank.getSources());
+});
+
+router.get('/question-bank/search', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const result = extBank.searchQuestions(req.query);
+  res.json(result);
+});
+
+router.post('/question-bank/import', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const result = extBank.importQuestions(req.body.questions || [], req.body.source || 'BUILTIN');
+  res.json({ success: true, imported: result.imported, total: result.total });
+});
+
+router.post('/question-bank/generate', roleMiddleware('teacher', 'admin'), (req, res) => {
+  const question = extBank.generateQuestion(req.body);
+  if (question) {
+    res.json({ success: true, question: question });
+  } else {
+    res.status(400).json({ error: '无法生成该知识点和类型的题目' });
+  }
 });
 
 module.exports = router;

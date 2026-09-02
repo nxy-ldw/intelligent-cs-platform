@@ -838,8 +838,8 @@
         var data = await response.json();
         if (response.ok && data.token) {
           showFormSuccess('login', '登录成功！正在跳转...');
-          localStorage.setItem('auth_token', data.token);
-          if (data.user) { localStorage.setItem('user_info', JSON.stringify(data.user)); }
+          localStorage.setItem('token', data.token);
+          if (data.user) { localStorage.setItem('user', JSON.stringify(data.user)); }
           setTimeout(function() {
             var user = data.user;
             if (user && user.role === 'teacher') { window.location.href = '/teacher/'; }
@@ -882,8 +882,8 @@
         var data = await response.json();
         if (response.ok && data.token) {
           showFormSuccess('register', '注册成功！正在跳转...');
-          localStorage.setItem('auth_token', data.token);
-          if (data.user) { localStorage.setItem('user_info', JSON.stringify(data.user)); }
+          localStorage.setItem('token', data.token);
+          if (data.user) { localStorage.setItem('user', JSON.stringify(data.user)); }
           setTimeout(function() {
             if (role === 'teacher') { window.location.href = '/teacher/'; }
             else if (role === 'admin') { window.location.href = '/admin/'; }
