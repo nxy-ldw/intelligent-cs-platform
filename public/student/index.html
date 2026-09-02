@@ -957,6 +957,9 @@
           <div class="nav-item" onclick="switchSection('profile', this)">
             <span class="nav-icon">👤</span><span>个人中心</span>
           </div>
+          <div class="nav-item" onclick="window.location.href='/chat'">
+            <span class="nav-icon">💬</span><span>班级群聊</span>
+          </div>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -1346,7 +1349,14 @@
       if (!optionsStr) return [];
       try {
         var parsed = JSON.parse(optionsStr);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map(function(item, i) {
+            var str = String(item);
+            var match = str.match(/^([A-Z])[.．、:：]\s*(.*)/);
+            if (match) return { label: match[1], text: match[2] };
+            return { label: String.fromCharCode(65 + i), text: str };
+          });
+        }
       } catch (e) {}
       var lines = optionsStr.split('\n').filter(function(l) { return l.trim(); });
       return lines.map(function(line, i) {

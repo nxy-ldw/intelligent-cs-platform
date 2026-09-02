@@ -23,10 +23,12 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/student', require('./routes/student'));
 app.use('/api/teacher', require('./routes/teacher'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/chat', require('./routes/chat'));
 
 app.get('/student', (req, res) => res.sendFile(path.join(__dirname, 'public', 'student', 'index.html')));
 app.get('/teacher', (req, res) => res.sendFile(path.join(__dirname, 'public', 'teacher', 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));
+app.get('/chat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'chat', 'index.html')));
 
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {

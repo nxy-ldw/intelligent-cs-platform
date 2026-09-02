@@ -26,12 +26,18 @@ let db = {
   operation_logs: [],
   admin_logs: [],
   system_config: [],
+  chat_groups: [],
+  chat_members: [],
+  chat_messages: [],
+  chat_settings: [],
+  chat_announcements: [],
   _seq: {
     users: 0, classes: 0, announcements: 0, student_logs: 0,
     knowledge_points: 0, questions: 0, tasks: 0, task_questions: 0,
     answers: 0, wrong_questions: 0, diagnosis_reports: 0,
     notifications: 0, operation_logs: 0, admin_logs: 0,
-    system_config: 0
+    system_config: 0, chat_groups: 0, chat_members: 0,
+    chat_messages: 0, chat_settings: 0, chat_announcements: 0
   }
 };
 

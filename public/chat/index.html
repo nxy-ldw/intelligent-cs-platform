@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>群聊</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #06b6d4;
+      --accent: #2dd4bf;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-dark: #0f172a;
+      --text-medium: #334155;
+      --text-light: #64748b;
+      --text-muted: #94a3b8;
+      --bg-light: #f0f9ff;
+      --bg-page: #ededed;
+      --bg-white: #ffffff;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+      color: var(--text-dark);
+      background: var(--bg-page);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; outline: none; touch-action: manipulation; }
+    input, textarea { font-family: inherit; outline: none; font-size: 16px; }
+    ul { list-style: none; }
+    a { text-decoration: none; color: inherit; }
+
+    /* App container - mobile frame */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      height: 100vh;
+      height: 100dvh;
+      background: var(--bg-page);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Pages */
+    .page {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .page.active { display: flex; }
+
+    /* Header */
+    .header {
+      height: 56px;
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+    .header-title {
+      flex: 1;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border-radius: var(--radius-full);
+      color: var(--text-medium);
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .header-btn:active { background: var(--bg-light); }
+    .header-btn.left { font-size: 22px; }
+    .header-btn.right { font-size: 22px; font-weight: 300; }
+
+    /* Group List */
+    .group-list-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .group-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-white);
+      border-bottom: 1px solid #f1f1f1;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .group-item:active { background: #f5f5f5; }
+    .group-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-right: 12px;
+    }
+    .group-info { flex: 1; min-width: 0; overflow: hidden; }
+    .group-top-row { display: flex; align-items: center; justify-content: space-between; }
+    .group-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    .group-time { font-size: 12px; color: var(--text-muted); flex-shrink: 0; margin-left: 8px; }
+    .group-bottom-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+    .group-preview {
+      font-size: 13px;
+      color: var(--text-light);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+    .group-badges { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+    .unread-badge {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    .badge-icon { font-size: 14px; color: var(--text-muted); }
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 56px; margin-bottom: 16px; opacity: 0.3; }
+    .empty-state-text { font-size: 15px; }
+
+    /* Dropdown menu */
+    .dropdown-mask {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: transparent;
+      z-index: 50;
+      display: none;
+    }
+    .dropdown-mask.show { display: block; }
+    .dropdown-menu {
+      position: absolute;
+      top: 52px;
+      right: 8px;
+      background: var(--bg-white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      z-index: 51;
+      min-width: 150px;
+      display: none;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-item {
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--text-dark);
+      cursor: pointer;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .dropdown-item:active { background: var(--bg-light); }
+    .dropdown-item + .dropdown-item { border-top: 1px solid #f5f5f5; }
+
+    /* Chat page */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 12px 20px;
+      background-color: var(--bg-page);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: local;
+    }
+    .msg-row { display: flex; margin-bottom: 16px; align-items: flex-start; }
+    .msg-row.self { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .msg-content-wrap { max-width: 72%; margin: 0 10px; display: flex; flex-direction: column; }
+    .msg-row.self .msg-content-wrap { align-items: flex-end; }
+    .msg-sender { font-size: 12px; color: var(--text-light); margin-bottom: 3px; padding: 0 4px; }
+    .msg-bubble {
+      padding: 9px 13px;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      line-height: 1.45;
+      word-break: break-word;
+      background: var(--bg-white);
+      color: var(--text-dark);
+      box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+      max-width: 100%;
+    }
+    .msg-row.self .msg-bubble {
+      background: #95ec69;
+      color: var(--text-dark);
+      border-top-right-radius: 4px;
+    }
+    .msg-row.other .msg-bubble { border-top-left-radius: 4px; }
+    .msg-sys {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .msg-sys-text {
+      display: inline-block;
+      background: rgba(0,0,0,0.08);
+      color: var(--text-light);
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+      max-width: 80%;
+    }
+    .msg-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+
+    /* Chat input */
+    .chat-input-bar {
+      display: flex;
+      align-items: flex-end;
+      padding: 8px 10px;
+      background: #f7f7f7;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+    }
+    .chat-input {
+      flex: 1;
+      min-height: 40px;
+      max-height: 120px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-white);
+      font-size: 16px;
+      resize: none;
+      line-height: 1.4;
+    }
+    .send-btn {
+      margin-left: 8px;
+      height: 40px;
+      padding: 0 16px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 500;
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+    .send-btn:active { background: var(--primary-dark); }
+    .send-btn:disabled { background: var(--text-muted); }
+
+    /* Settings page */
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 20px;
+    }
+    .settings-group {
+      background: var(--bg-white);
+      margin-top: 10px;
+    }
+    .settings-group-title {
+      font-size: 13px;
+      color: var(--text-light);
+      padding: 12px 16px 6px;
+    }
+    .settings-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      min-height: 52px;
+    }
+    .settings-item:last-child { border-bottom: none; }
+    .settings-item-label { flex: 1; font-size: 16px; color: var(--text-dark); }
+    .settings-item-value {
+      font-size: 15px;
+      color: var(--text-light);
+      max-width: 50%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .settings-item-arrow { color: var(--text-muted); font-size: 18px; margin-left: 8px; }
+    .settings-item:active { background: #f9f9f9; }
+
+    /* Switch */
+    .switch {
+      position: relative;
+      width: 46px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .switch input { display: none; }
+    .switch-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #ccc;
+      border-radius: var(--radius-full);
+      transition: 0.2s;
+      cursor: pointer;
+    }
+    .switch-slider:before {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      left: 2px;
+      top: 2px;
+      background: #fff;
+      border-radius: 50%;
+      transition: 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .switch input:checked + .switch-slider { background: var(--success); }
+    .switch input:checked + .switch-slider:before { transform: translateX(18px); }
+
+    .danger-btn {
+      display: block;
+      width: calc(100% - 32px);
+      margin: 20px 16px 0;
+      padding: 14px;
+      text-align: center;
+      background: var(--bg-white);
+      color: var(--danger);
+      font-size: 16px;
+      border-radius: var(--radius-md);
+      touch-action: manipulation;
+    }
+    .danger-btn:active { background: #fef2f2; }
+
+    /* QR page */
+    .qr-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px 24px;
+      background: var(--bg-white);
+    }
+    .qr-card {
+      background: #fff;
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+    }
+    .qr-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .qr-subtitle { font-size: 14px; color: var(--text-light); margin-bottom: 20px; }
+    .qr-img {
+      width: 220px;
+      height: 220px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-img canvas, .qr-img img { max-width: 100%; max-height: 100%; }
+    .qr-code-text {
+      margin-top: 20px;
+      font-size: 15px;
+      color: var(--text-medium);
+    }
+    .qr-code-label { color: var(--text-muted); font-size: 13px; }
+    .qr-tip { margin-top: 16px; font-size: 13px; color: var(--text-muted); }
+    .qr-action-btn {
+      margin-top: 24px;
+      padding: 12px 32px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      touch-action: manipulation;
+    }
+    .qr-action-btn:active { background: var(--primary-dark); }
+
+    /* Scanner */
+    .scanner-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 200;
+    }
+    .scanner-overlay.show { display: flex; flex-direction: column; }
+    .scanner-header {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      color: #fff;
+    }
+    .scanner-close { color: #fff; font-size: 20px; background: transparent; }
+    .scanner-title { font-size: 17px; font-weight: 600; }
+    .scanner-video-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #scannerVideo { width: 100%; height: 100%; object-fit: cover; }
+    .scanner-frame {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70vw;
+      max-width: 280px;
+      height: 70vw;
+      max-height: 280px;
+      border: 2px solid rgba(255,255,255,0.6);
+      border-radius: 12px;
+    }
+    .scanner-frame:after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--primary);
+      animation: scanline 2s linear infinite;
+    }
+    @keyframes scanline { 0% { top: 0; } 100% { top: 100%; } }
+    .scanner-tip {
+      text-align: center;
+      color: #fff;
+      font-size: 14px;
+      padding: 16px;
+    }
+
+    /* Modal */
+    .modal-mask {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-mask.show { display: flex; }
+    .modal {
+      background: var(--bg-white);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 360px;
+      overflow: hidden;
+    }
+    .modal-header {
+      text-align: center;
+      font-size: 17px;
+      font-weight: 600;
+      padding: 20px 16px 12px;
+    }
+    .modal-body { padding: 8px 20px 20px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 14px; color: var(--text-medium); margin-bottom: 6px; display: block; }
+    .form-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      background: var(--bg-white);
+    }
+    .form-input:focus { border-color: var(--primary); }
+    .modal-footer { display: flex; border-top: 1px solid var(--border); }
+    .modal-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      background: transparent;
+      touch-action: manipulation;
+    }
+    .modal-btn:active { background: #f5f5f5; }
+    .modal-btn.cancel { color: var(--text-light); border-right: 1px solid var(--border); }
+    .modal-btn.confirm { color: var(--primary); font-weight: 600; }
+
+    /* Members */
+    .members-body {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: var(--bg-white);
+    }
+    .member-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .member-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-right: 12px;
+    }
+    .member-info { flex: 1; }
+    .member-name { font-size: 16px; color: var(--text-dark); }
+    .member-nick { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+    .member-role {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .role-owner { background: #fef3c7; color: #d97706; }
+    .role-admin { background: #dbeafe; color: #2563eb; }
+    .role-member { background: #f1f5f9; color: var(--text-light); }
+
+    /* Announcements */
+    .announcement-item {
+      background: var(--bg-white);
+      padding: 14px 16px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .announcement-content { font-size: 15px; color: var(--text-dark); line-height: 1.5; }
+    .announcement-meta { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      max-width: 80%;
+      text-align: center;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Page: Group List -->
+    <div class="page active" id="page-list">
+      <div class="header">
+        <div class="header-btn left"></div>
+        <div class="header-title">群聊</div>
+        <button class="header-btn right" id="btn-add" onclick="toggleAddMenu(event)">+</button>
+      </div>
+      <div class="group-list-body" id="group-list-body">
+        <div class="loading"><div class="spinner"></div>加载中...</div>
+      </div>
+      <div class="dropdown-mask" id="dropdown-mask" onclick="hideAddMenu()"></div>
+      <div class="dropdown-menu" id="add-menu">
+        <div class="dropdown-item" onclick="showCreateModal()">创建群聊</div>
+        <div class="dropdown-item" onclick="showJoinModal()">加入群聊</div>
+        <div class="dropdown-item" onclick="startScan()">扫一扫</div>
+      </div>
+    </div>
+
+    <!-- Page: Chat -->
+    <div class="page" id="page-chat">
+      <div class="header">
+        <button class="header-btn left" onclick="showPage('list'); stopPolling();">&#8249;</button>
+        <div class="header-title" id="chat-title" onclick="showPage('settings')">群聊</div>
+        <button class="header-btn right" onclick="showPage('settings')">&#8943;</button>
+      </div>
+      <div class="chat-body" id="chat-body"></div>
+      <div class="chat-input-bar">
+        <textarea class="chat-input" id="msg-input" rows="1" placeholder="输入消息..." oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">发送</button>
+      </div>
+    </div>
+
+    <!-- Page: Settings -->
+    <div class="page" id="page-settings">
+      <div class="header">
+        <button class="header-btn left" onclick="showPage('chat')">&#8249;</button>
+        <div class="header-title">群聊设置</div>
+        <div class="header-btn right"></div>
+      </div>
+      <div class="settings-body" id="settings-body">
+        <div class="loading"><div class="spinner"></div>加载中...</div>
+      </div>
+    </div>
+
+    <!-- Page: Members -->
+    <div class="page" id="page-members">
+      <div class="header">
+        <button class="header-btn left" onclick="showPage('settings')">&#8249;</button>
+        <div class="header-title" id="members-title">群成员</div>
+        <div class="header-btn right"></div>
+      </div>
+      <div class="members-body" id="members-body">
+        <div class="loading"><div class="spinner"></div>加载中...</div>
+      </div>
+    </div>
+
+    <!-- Page: QR -->
+    <div class="page" id="page-qr">
+      <div class="header">
+        <button class="header-btn left" onclick="showPage('settings')">&#8249;</button>
+        <div class="header-title">群二维码</div>
+        <div class="header-btn right"></div>
+      </div>
+      <div class="qr-body" id="qr-body"></div>
+    </div>
+
+    <!-- Page: Scan -->
+    <div class="page" id="page-scan">
+      <div class="header">
+        <button class="header-btn left" onclick="stopScan()">&#8249;</button>
+        <div class="header-title">扫一扫</div>
+        <div class="header-btn right"></div>
+      </div>
+      <div class="qr-body" style="justify-content: flex-start; padding-top: 20px;">
+        <div class="qr-card">
+          <div class="qr-title">扫描群二维码</div>
+          <div class="qr-subtitle">将二维码放入框内即可自动扫描</div>
+          <button class="qr-action-btn" onclick="startCameraScan()">开始扫描</button>
+          <div class="qr-tip">需要摄像头权限</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scanner overlay -->
+    <div class="scanner-overlay" id="scanner-overlay">
+      <div class="scanner-header">
+        <button class="scanner-close" onclick="stopScan()">&#10005;</button>
+        <div class="scanner-title">扫一扫</div>
+        <div style="width:28px"></div>
+      </div>
+      <div class="scanner-video-wrap">
+        <video id="scannerVideo" playsinline></video>
+        <div class="scanner-frame"></div>
+      </div>
+      <div class="scanner-tip">将二维码放入框内即可自动扫描</div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div class="modal-mask" id="modal-create">
+      <div class="modal">
+        <div class="modal-header">创建群聊</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">群聊名称</label>
+            <input type="text" class="form-input" id="create-name" placeholder="请输入群聊名称" maxlength="30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">班级代码（选填）</label>
+            <input type="text" class="form-input" id="create-class-code" placeholder="请输入班级代码" maxlength="20">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-create')">取消</button>
+          <button class="modal-btn confirm" onclick="createGroup()">创建</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Join Group Modal -->
+    <div class="modal-mask" id="modal-join">
+      <div class="modal">
+        <div class="modal-header">加入群聊</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">邀请码</label>
+            <input type="text" class="form-input" id="join-code" placeholder="请输入邀请码" maxlength="20">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-join')">取消</button>
+          <button class="modal-btn confirm" onclick="joinByCode()">加入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal-mask" id="modal-announce">
+      <div class="modal">
+        <div class="modal-header">发布公告</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">公告内容</label>
+            <textarea class="form-input" id="announce-content" rows="4" placeholder="请输入公告内容" style="resize:none"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-announce')">取消</button>
+          <button class="modal-btn confirm" onclick="postAnnouncement()">发布</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nickname Modal -->
+    <div class="modal-mask" id="modal-nick">
+      <div class="modal">
+        <div class="modal-header">我在本群的昵称</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <input type="text" class="form-input" id="nick-input" placeholder="请输入昵称" maxlength="20">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-nick')">取消</button>
+          <button class="modal-btn confirm" onclick="saveNickname()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Remark Modal -->
+    <div class="modal-mask" id="modal-remark">
+      <div class="modal">
+        <div class="modal-header">群聊备注</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <input type="text" class="form-input" id="remark-input" placeholder="请输入备注" maxlength="30">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-remark')">取消</button>
+          <button class="modal-btn confirm" onclick="saveRemark()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Background Modal -->
+    <div class="modal-mask" id="modal-bg">
+      <div class="modal">
+        <div class="modal-header">聊天背景</div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">背景图片URL</label>
+            <input type="text" class="form-input" id="bg-url-input" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">或上传图片</label>
+            <input type="file" class="form-input" id="bg-file-input" accept="image/*" style="padding:8px">
+          </div>
+          <button class="qr-action-btn" style="width:100%; margin-top:8px" onclick="clearBg()">恢复默认背景</button>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn cancel" onclick="hideModal('modal-bg')">取消</button>
+          <button class="modal-btn confirm" onclick="saveBg()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- QR Code Generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <!-- jsQR for scanning -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+  <script>
+    // ========== State ==========
+    var token = localStorage.getItem('token');
+    var userStr = localStorage.getItem('user');
+    var currentUser = null;
+    var groups = [];
+    var currentGroupId = null;
+    var currentGroup = null;
+    var messages = [];
+    var lastMsgId = 0;
+    var pollTimer = null;
+    var members = [];
+    var mySettings = null;
+    var scannerStream = null;
+    var scannerRAF = null;
+
+    // ========== Auth check ==========
+    function checkAuth() {
+      if (!token || !userStr) {
+        window.location.href = '/';
+        return false;
+      }
+      try {
+        currentUser = JSON.parse(userStr);
+      } catch (e) {
+        window.location.href = '/';
+        return false;
+      }
+      return true;
+    }
+
+    // ========== API helper ==========
+    async function api(method, path, body) {
+      var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+      var opts = { method: method, headers: headers };
+      if (body !== undefined) {
+        opts.body = JSON.stringify(body);
+      }
+      var res = await fetch(path, opts);
+      var data;
+      var text = await res.text();
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        data = { raw: text };
+      }
+      if (!res.ok) {
+        var msg = (data && data.error) || (data && data.message) || ('请求失败 (' + res.status + ')');
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    // ========== Toast ==========
+    var toastTimer = null;
+    function toast(msg) {
+      var el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(function() { el.classList.remove('show'); }, 2000);
+    }
+
+    // ========== Page navigation ==========
+    function showPage(name) {
+      var pages = document.querySelectorAll('.page');
+      for (var i = 0; i < pages.length; i++) {
+        pages[i].classList.remove('active');
+      }
+      var page = document.getElementById('page-' + name);
+      if (page) page.classList.add('active');
+    }
+
+    // ========== Utility ==========
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getInitial(name) {
+      if (!name) return '?';
+      return name.charAt(0).toUpperCase();
+    }
+
+    function formatTime(ts) {
+      if (!ts) return '';
+      var d = new Date(ts);
+      var now = new Date();
+      var diff = now - d;
+      var sameDay = d.toDateString() === now.toDateString();
+      var hh = String(d.getHours()).padStart(2, '0');
+      var mm = String(d.getMinutes()).padStart(2, '0');
+      if (sameDay) {
+        return hh + ':' + mm;
+      }
+      var yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      if (d.toDateString() === yesterday.toDateString()) {
+        return '昨天';
+      }
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      if (d.getFullYear() === now.getFullYear()) {
+        return month + '/' + day;
+      }
+      return d.getFullYear() + '/' + month + '/' + day;
+    }
+
+    function formatFullTime(ts) {
+      if (!ts) return '';
+      var d = new Date(ts);
+      var hh = String(d.getHours()).padStart(2, '0');
+      var mm = String(d.getMinutes()).padStart(2, '0');
+      return formatTime(ts) + ' ' + hh + ':' + mm;
+    }
+
+    // ========== Group List ==========
+    async function loadGroups() {
+      var body = document.getElementById('group-list-body');
+      try {
+        var data = await api('GET', '/api/chat/groups');
+        groups = Array.isArray(data) ? data : (data.groups || data.data || []);
+        renderGroups();
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠</div><div class="empty-state-text">' + escapeHtml(e.message) + '</div></div>';
+      }
+    }
+
+    function renderGroups() {
+      var body = document.getElementById('group-list-body');
+      if (!groups || groups.length === 0) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div class="empty-state-text">暂无群聊，点击右上角创建</div></div>';
+        return;
+      }
+      // Sort: pinned first, then by last message time desc
+      groups.sort(function(a, b) {
+        var pa = a.is_pinned ? 1 : 0;
+        var pb = b.is_pinned ? 1 : 0;
+        if (pa !== pb) return pb - pa;
+        var ta = a.last_message_time || a.updated_at || a.created_at || 0;
+        var tb = b.last_message_time || b.updated_at || b.created_at || 0;
+        return (tb || 0) - (ta || 0);
+      });
+
+      var html = '';
+      for (var i = 0; i < groups.length; i++) {
+        var g = groups[i];
+        var preview = '';
+        if (g.last_message) {
+          preview = g.last_message;
+        } else if (g.last_message_preview) {
+          preview = g.last_message_preview;
+        }
+        var timeStr = formatTime(g.last_message_time || g.updated_at || g.created_at);
+        var unread = g.unread_count || 0;
+        var badges = '';
+        if (g.is_muted) {
+          badges += '<span class="badge-icon">🔇</span>';
+        }
+        if (g.is_pinned) {
+          badges += '<span class="badge-icon">📌</span>';
+        }
+        if (unread > 0) {
+          var u = unread > 99 ? '99+' : String(unread);
+          if (!g.is_muted) {
+            badges += '<span class="unread-badge">' + u + '</span>';
+          } else {
+            badges += '<span class="unread-badge" style="background:#9ca3af">' + u + '</span>';
+          }
+        }
+        html += '<div class="group-item" onclick="openGroup(\'' + g.id + '\')">' +
+          '<div class="group-avatar">' + escapeHtml(getInitial(g.name)) + '</div>' +
+          '<div class="group-info">' +
+            '<div class="group-top-row">' +
+              '<div class="group-name">' + escapeHtml(g.name) + '</div>' +
+              '<div class="group-time">' + escapeHtml(timeStr) + '</div>' +
+            '</div>' +
+            '<div class="group-bottom-row">' +
+              '<div class="group-preview">' + escapeHtml(preview) + '</div>' +
+              '<div class="group-badges">' + badges + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      body.innerHTML = html;
+    }
+
+    function openGroup(id) {
+      currentGroupId = id;
+      messages = [];
+      lastMsgId = 0;
+      showPage('chat');
+      loadChatPage();
+    }
+
+    // ========== Add Menu ==========
+    function toggleAddMenu(e) {
+      if (e) e.stopPropagation();
+      var menu = document.getElementById('add-menu');
+      var mask = document.getElementById('dropdown-mask');
+      if (menu.classList.contains('show')) {
+        hideAddMenu();
+      } else {
+        menu.classList.add('show');
+        mask.classList.add('show');
+      }
+    }
+    function hideAddMenu() {
+      document.getElementById('add-menu').classList.remove('show');
+      document.getElementById('dropdown-mask').classList.remove('show');
+    }
+
+    // ========== Modals ==========
+    function showModal(id) {
+      document.getElementById(id).classList.add('show');
+    }
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+    function showCreateModal() {
+      hideAddMenu();
+      document.getElementById('create-name').value = '';
+      document.getElementById('create-class-code').value = '';
+      showModal('modal-create');
+    }
+    function showJoinModal() {
+      hideAddMenu();
+      document.getElementById('join-code').value = '';
+      showModal('modal-join');
+    }
+
+    // ========== Create Group ==========
+    async function createGroup() {
+      var name = document.getElementById('create-name').value.trim();
+      var classCode = document.getElementById('create-class-code').value.trim();
+      if (!name) { toast('请输入群聊名称'); return; }
+      try {
+        var body = { name: name, type: 'group' };
+        if (classCode) body.class_code = classCode;
+        var data = await api('POST', '/api/chat/groups', body);
+        var newId = data.id || data.group_id || (data.group && data.group.id);
+        hideModal('modal-create');
+        toast('创建成功');
+        await loadGroups();
+        if (newId) {
+          openGroup(newId);
+        }
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    // ========== Join by Code ==========
+    async function joinByCode() {
+      var code = document.getElementById('join-code').value.trim();
+      if (!code) { toast('请输入邀请码'); return; }
+      try {
+        var data = await api('POST', '/api/chat/groups/join-by-code', { code: code });
+        var newId = data.id || data.group_id || (data.group && data.group.id);
+        hideModal('modal-join');
+        toast('加入成功');
+        await loadGroups();
+        if (newId) {
+          openGroup(newId);
+        }
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    // ========== Chat Page ==========
+    async function loadChatPage() {
+      if (!currentGroupId) return;
+      try {
+        var data = await api('GET', '/api/chat/groups/' + currentGroupId);
+        currentGroup = data.group || data;
+        // Extract my settings from group detail if available
+        mySettings = data.my_settings || data.settings || mySettings || {
+          nickname: data.my_nickname || '',
+          remark: data.remark || '',
+          is_pinned: data.is_pinned || false,
+          is_muted: data.is_muted || false,
+          chat_bg: data.chat_bg || ''
+        };
+        renderChatHeader();
+        applyChatBackground();
+        await loadMessages(true);
+        startPolling();
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    function renderChatHeader() {
+      if (!currentGroup) return;
+      var title = document.getElementById('chat-title');
+      var name = currentGroup.name || '群聊';
+      var count = currentGroup.member_count || (currentGroup.members && currentGroup.members.length) || 0;
+      title.textContent = name + (count ? ' (' + count + ')' : '');
+    }
+
+    function applyChatBackground() {
+      var body = document.getElementById('chat-body');
+      var bg = '';
+      if (mySettings && mySettings.chat_bg) {
+        bg = mySettings.chat_bg;
+      } else if (currentGroup && currentGroup.chat_bg) {
+        bg = currentGroup.chat_bg;
+      }
+      if (bg) {
+        body.style.backgroundImage = 'url("' + bg + '")';
+      } else {
+        body.style.backgroundImage = 'none';
+      }
+    }
+
+    async function loadMessages(initial) {
+      if (!currentGroupId) return;
+      try {
+        var url = '/api/chat/groups/' + currentGroupId + '/messages?limit=50';
+        if (lastMsgId && !initial) {
+          url += '&after=' + lastMsgId;
+        }
+        var data = await api('GET', url);
+        var newMsgs = Array.isArray(data) ? data : (data.messages || data.data || []);
+        if (newMsgs.length > 0) {
+          if (initial) {
+            messages = newMsgs;
+          } else {
+            for (var i = 0; i < newMsgs.length; i++) {
+              messages.push(newMsgs[i]);
+            }
+          }
+          // Update lastMsgId
+          for (var j = 0; j < newMsgs.length; j++) {
+            var mid = newMsgs[j].id;
+            if (mid && mid > lastMsgId) {
+              lastMsgId = mid;
+            }
+          }
+          renderMessages(initial);
+        }
+        if (initial) {
+          scrollChatToBottom();
+        } else if (newMsgs.length > 0) {
+          scrollChatToBottom();
+        }
+      } catch (e) {
+        // silent fail for polling
+      }
+    }
+
+    function renderMessages(scroll) {
+      var body = document.getElementById('chat-body');
+      var html = '';
+      var myId = currentUser ? (currentUser.id || currentUser.user_id || currentUser._id) : null;
+      for (var i = 0; i < messages.length; i++) {
+        var m = messages[i];
+        var isSys = m.type === 'system' || m.is_system;
+        if (isSys) {
+          html += '<div class="msg-sys"><div class="msg-sys-text">' + escapeHtml(m.content) + '</div></div>';
+          continue;
+        }
+        var isSelf = m.user_id === myId || m.sender_id === myId || (m.user && m.user.id === myId);
+        var senderName = m.sender_nickname || m.nickname || (m.user && (m.user.nickname || m.user.name || m.user.username)) || m.sender_name || m.username || '用户';
+        var avatarText = getInitial(senderName);
+        var rowClass = isSelf ? 'msg-row self' : 'msg-row other';
+        var timeStr = formatFullTime(m.created_at || m.timestamp || m.created_time);
+        html += '<div class="' + rowClass + '">' +
+          '<div class="msg-avatar">' + escapeHtml(avatarText) + '</div>' +
+          '<div class="msg-content-wrap">' +
+            '<div class="msg-sender">' + escapeHtml(senderName) + '</div>' +
+            '<div class="msg-bubble">' + escapeHtml(m.content) + '</div>' +
+            '<div class="msg-time">' + escapeHtml(timeStr) + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      body.innerHTML = html;
+    }
+
+    function scrollChatToBottom() {
+      var body = document.getElementById('chat-body');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    // ========== Polling ==========
+    function startPolling() {
+      stopPolling();
+      pollTimer = setInterval(function() {
+        loadMessages(false);
+      }, 3000);
+    }
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    // ========== Send Message ==========
+    async function sendMessage() {
+      var input = document.getElementById('msg-input');
+      var content = input.value.trim();
+      if (!content) return;
+      if (!currentGroupId) return;
+      var btn = document.getElementById('send-btn');
+      btn.disabled = true;
+      try {
+        var data = await api('POST', '/api/chat/groups/' + currentGroupId + '/messages', { content: content, type: 'text' });
+        var newMsg = data.message || data;
+        if (newMsg) {
+          messages.push(newMsg);
+          var mid = newMsg.id;
+          if (mid && mid > lastMsgId) lastMsgId = mid;
+          renderMessages();
+          scrollChatToBottom();
+        }
+        input.value = '';
+        autoResize(input);
+      } catch (e) {
+        toast(e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    // Handle Enter key to send
+    document.getElementById('msg-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ========== Settings Page ==========
+    async function loadSettings() {
+      if (!currentGroupId) return;
+      var body = document.getElementById('settings-body');
+      body.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>';
+      try {
+        var data = await api('GET', '/api/chat/groups/' + currentGroupId);
+        currentGroup = data.group || data;
+        // mySettings might come from the group detail or a separate structure
+        mySettings = data.my_settings || data.settings || {
+          nickname: data.my_nickname || '',
+          remark: data.remark || '',
+          is_pinned: data.is_pinned || false,
+          is_muted: data.is_muted || false,
+          chat_bg: data.chat_bg || ''
+        };
+        renderSettings();
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">' + escapeHtml(e.message) + '</div></div>';
+      }
+    }
+
+    function renderSettings() {
+      if (!currentGroup) return;
+      var body = document.getElementById('settings-body');
+      var inviteCode = currentGroup.invite_code || currentGroup.code || '';
+      var html = '';
+
+      // Group info
+      var memberCount = currentGroup.member_count || (currentGroup.members && currentGroup.members.length) || 0;
+      html += '<div class="settings-group-title">群信息</div>';
+      html += '<div class="settings-group">';
+      html += '<div class="settings-item"><div class="settings-item-label">群聊名称</div><div class="settings-item-value">' + escapeHtml(currentGroup.name || '') + '</div></div>';
+      html += '<div class="settings-item" onclick="showPage(\'members\')"><div class="settings-item-label">群成员</div><div class="settings-item-value">' + (memberCount ? memberCount + '人' : '') + '</div><div class="settings-item-arrow">›</div></div>';
+      html += '<div class="settings-item" onclick="showPage(\'qr\')"><div class="settings-item-label">群二维码</div><div class="settings-item-arrow">›</div></div>';
+      html += '<div class="settings-item" data-invite="' + escapeHtml(inviteCode) + '" onclick="copyInviteCode(this)"><div class="settings-item-label">邀请码</div><div class="settings-item-value">' + escapeHtml(inviteCode) + '</div><div class="settings-item-arrow">复制</div></div>';
+      html += '</div>';
+
+      // Announcements
+      html += '<div class="settings-group-title">群公告</div>';
+      html += '<div class="settings-group" id="announcements-section"><div class="loading" style="padding:16px">加载中...</div></div>';
+
+      // My settings
+      var nick = mySettings.nickname || '';
+      var remark = mySettings.remark || '';
+      var isPinned = mySettings.is_pinned || false;
+      var isMuted = mySettings.is_muted || false;
+      html += '<div class="settings-group-title">我的设置</div>';
+      html += '<div class="settings-group">';
+      html += '<div class="settings-item" onclick="showNickModal()"><div class="settings-item-label">我在本群的昵称</div><div class="settings-item-value">' + escapeHtml(nick || '未设置') + '</div><div class="settings-item-arrow">›</div></div>';
+      html += '<div class="settings-item" onclick="showRemarkModal()"><div class="settings-item-label">群聊备注</div><div class="settings-item-value">' + escapeHtml(remark || '未设置') + '</div><div class="settings-item-arrow">›</div></div>';
+      html += '<div class="settings-item"><div class="settings-item-label">置顶聊天</div><label class="switch"><input type="checkbox" id="switch-pin" ' + (isPinned ? 'checked' : '') + ' onchange="updateSetting(\'is_pinned\', this.checked)"><span class="switch-slider"></span></label></div>';
+      html += '<div class="settings-item"><div class="settings-item-label">消息免打扰</div><label class="switch"><input type="checkbox" id="switch-mute" ' + (isMuted ? 'checked' : '') + ' onchange="updateSetting(\'is_muted\', this.checked)"><span class="switch-slider"></span></label></div>';
+      html += '<div class="settings-item" onclick="showBgModal()"><div class="settings-item-label">聊天背景</div><div class="settings-item-value">' + (mySettings.chat_bg ? '已设置' : '默认') + '</div><div class="settings-item-arrow">›</div></div>';
+      html += '</div>';
+
+      // Danger zone
+      html += '<button class="danger-btn" onclick="clearChatHistory()">清空聊天记录</button>';
+      html += '<button class="danger-btn" onclick="leaveGroup()" style="color:' + 'var(--danger)' + '">退出群聊</button>';
+
+      body.innerHTML = html;
+
+      // Load announcements
+      loadAnnouncements();
+    }
+
+    function showNickModal() {
+      document.getElementById('nick-input').value = mySettings.nickname || '';
+      showModal('modal-nick');
+    }
+    function showRemarkModal() {
+      document.getElementById('remark-input').value = mySettings.remark || '';
+      showModal('modal-remark');
+    }
+    function showBgModal() {
+      document.getElementById('bg-url-input').value = mySettings.chat_bg || '';
+      document.getElementById('bg-file-input').value = '';
+      showModal('modal-bg');
+    }
+
+    async function saveNickname() {
+      var val = document.getElementById('nick-input').value.trim();
+      try {
+        await api('PUT', '/api/chat/groups/' + currentGroupId + '/settings', { nickname: val });
+        mySettings.nickname = val;
+        hideModal('modal-nick');
+        toast('已保存');
+        renderSettings();
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    async function saveRemark() {
+      var val = document.getElementById('remark-input').value.trim();
+      try {
+        await api('PUT', '/api/chat/groups/' + currentGroupId + '/settings', { remark: val });
+        mySettings.remark = val;
+        hideModal('modal-remark');
+        toast('已保存');
+        renderSettings();
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    async function saveBg() {
+      var urlVal = document.getElementById('bg-url-input').value.trim();
+      var fileInput = document.getElementById('bg-file-input');
+      var bgValue = urlVal;
+      if (fileInput.files && fileInput.files[0]) {
+        // Convert to data URL for local use
+        bgValue = await fileToDataURL(fileInput.files[0]);
+      }
+      try {
+        await api('PUT', '/api/chat/groups/' + currentGroupId + '/settings', { chat_bg: bgValue });
+        mySettings.chat_bg = bgValue;
+        hideModal('modal-bg');
+        toast('已保存');
+        applyChatBackground();
+        renderSettings();
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    function fileToDataURL(file) {
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(new Error('读取文件失败')); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function clearBg() {
+      try {
+        await api('PUT', '/api/chat/groups/' + currentGroupId + '/settings', { chat_bg: '' });
+        mySettings.chat_bg = '';
+        hideModal('modal-bg');
+        applyChatBackground();
+        renderSettings();
+        toast('已恢复默认');
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    async function updateSetting(key, value) {
+      try {
+        var payload = {};
+        payload[key] = value;
+        await api('PUT', '/api/chat/groups/' + currentGroupId + '/settings', payload);
+        mySettings[key] = value;
+        toast(value ? '已开启' : '已关闭');
+      } catch (e) {
+        toast(e.message);
+        // Revert checkbox
+        var cb = document.getElementById(key === 'is_pinned' ? 'switch-pin' : 'switch-mute');
+        if (cb) cb.checked = !value;
+      }
+    }
+
+    async function clearChatHistory() {
+      if (!confirm('确定清空聊天记录？')) return;
+      try {
+        await api('DELETE', '/api/chat/groups/' + currentGroupId + '/messages');
+        messages = [];
+        lastMsgId = 0;
+        renderMessages();
+        toast('已清空');
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    async function leaveGroup() {
+      if (!confirm('确定退出群聊？')) return;
+      try {
+        await api('POST', '/api/chat/groups/' + currentGroupId + '/leave');
+        stopPolling();
+        toast('已退出');
+        showPage('list');
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+          toast('已复制: ' + text);
+        }, function() {
+          toast('复制失败');
+        });
+      } else {
+        toast('已复制: ' + text);
+      }
+    }
+
+    function copyInviteCode(el) {
+      var code = el.getAttribute('data-invite') || '';
+      copyText(code);
+    }
+
+    // ========== Announcements ==========
+    async function loadAnnouncements() {
+      var section = document.getElementById('announcements-section');
+      if (!section) return;
+      try {
+        var data = await api('GET', '/api/chat/groups/' + currentGroupId + '/announcements');
+        var anns = Array.isArray(data) ? data : (data.announcements || data.data || []);
+        if (anns.length === 0) {
+          section.innerHTML = '<div class="settings-item" onclick="showAnnounceModal()"><div class="settings-item-label">暂无公告</div><div class="settings-item-arrow">发布</div></div>';
+        } else {
+          var html = '';
+          for (var i = 0; i < anns.length; i++) {
+            var a = anns[i];
+            html += '<div class="announcement-item">' +
+              '<div class="announcement-content">' + escapeHtml(a.content) + '</div>' +
+              '<div class="announcement-meta">' + escapeHtml(a.author || a.publisher || '') + ' ' + escapeHtml(formatFullTime(a.created_at || a.timestamp)) + '</div>' +
+            '</div>';
+          }
+          html += '<div class="settings-item" onclick="showAnnounceModal()"><div class="settings-item-label">发布公告</div><div class="settings-item-arrow">›</div></div>';
+          section.innerHTML = html;
+        }
+      } catch (e) {
+        section.innerHTML = '<div class="settings-item"><div class="settings-item-label">加载失败</div></div>';
+      }
+    }
+
+    function showAnnounceModal() {
+      document.getElementById('announce-content').value = '';
+      showModal('modal-announce');
+    }
+
+    async function postAnnouncement() {
+      var content = document.getElementById('announce-content').value.trim();
+      if (!content) { toast('请输入公告内容'); return; }
+      try {
+        await api('POST', '/api/chat/groups/' + currentGroupId + '/announcements', { content: content });
+        hideModal('modal-announce');
+        toast('发布成功');
+        loadAnnouncements();
+      } catch (e) {
+        toast(e.message);
+      }
+    }
+
+    // ========== Members ==========
+    async function loadMembers() {
+      if (!currentGroupId) return;
+      var body = document.getElementById('members-body');
+      try {
+        var data = await api('GET', '/api/chat/groups/' + currentGroupId + '/members');
+        members = Array.isArray(data) ? data : (data.members || data.data || []);
+        var count = members.length;
+        document.getElementById('members-title').textContent = '群成员 (' + count + ')';
+        renderMembers();
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">' + escapeHtml(e.message) + '</div></div>';
+      }
+    }
+
+    function renderMembers() {
+      var body = document.getElementById('members-body');
+      if (!members || members.length === 0) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">暂无成员</div></div>';
+        return;
+      }
+      // Sort: owner first, then admin, then member
+      members.sort(function(a, b) {
+        var ra = roleRank(a.role);
+        var rb = roleRank(b.role);
+        if (ra !== rb) return ra - rb;
+        return 0;
+      });
+      var html = '';
+      for (var i = 0; i < members.length; i++) {
+        var m = members[i];
+        var name = m.username || m.name || m.user_name || '用户';
+        var nick = m.nickname || m.nick_name || '';
+        var role = (m.role || 'member').toLowerCase();
+        var roleText = '';
+        var roleClass = '';
+        if (role === 'owner' || role === 'creator') {
+          roleText = '群主';
+          roleClass = 'role-owner';
+        } else if (role === 'admin' || role === 'administrator') {
+          roleText = '管理员';
+          roleClass = 'role-admin';
+        } else {
+          roleText = '成员';
+          roleClass = 'role-member';
+        }
+        var avatarText = getInitial(name);
+        html += '<div class="member-item">' +
+          '<div class="member-avatar">' + escapeHtml(avatarText) + '</div>' +
+          '<div class="member-info">' +
+            '<div class="member-name">' + escapeHtml(name) + '</div>' +
+            (nick ? '<div class="member-nick">昵称: ' + escapeHtml(nick) + '</div>' : '') +
+          '</div>' +
+          '<div class="member-role ' + roleClass + '">' + roleText + '</div>' +
+        '</div>';
+      }
+      body.innerHTML = html;
+    }
+
+    function roleRank(role) {
+      var r = (role || 'member').toLowerCase();
+      if (r === 'owner' || r === 'creator') return 0;
+      if (r === 'admin' || r === 'administrator') return 1;
+      return 2;
+    }
+
+    // ========== QR Code ==========
+    async function showQRPage() {
+      // Note: page switching is handled by showPage override; this only loads data
+      if (!currentGroupId) return;
+      var body = document.getElementById('qr-body');
+      body.innerHTML = '<div class="loading"><div class="spinner"></div>加载中...</div>';
+      try {
+        var data = await api('GET', '/api/chat/groups/' + currentGroupId + '/qr');
+        var qrData = data.qr_data || data.qrData || data.qr || '';
+        var name = (data.name || (currentGroup && currentGroup.name) || '群聊');
+        var code = data.invite_code || (currentGroup && currentGroup.invite_code) || '';
+        renderQR(qrData, name, code);
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">' + escapeHtml(e.message) + '</div></div>';
+      }
+    }
+
+    function renderQR(qrData, name, code) {
+      var body = document.getElementById('qr-body');
+      // Generate QR code using qrcode-generator
+      try {
+        var qr = qrcode(0, 'M');
+        qr.addData(qrData || name);
+        qr.make();
+        var imgTag = qr.createImgTag(6, 0);
+        body.innerHTML = '<div class="qr-card">' +
+          '<div class="qr-title">' + escapeHtml(name) + '</div>' +
+          '<div class="qr-subtitle">群二维码</div>' +
+          '<div class="qr-img">' + imgTag + '</div>' +
+          (code ? '<div class="qr-code-text"><span class="qr-code-label">邀请码: </span>' + escapeHtml(code) + '</div>' : '') +
+          '<div class="qr-tip">扫一扫上面的二维码可加入群聊</div>' +
+        '</div>';
+      } catch (e) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">二维码生成失败</div></div>';
+      }
+    }
+
+    // ========== Scanner ==========
+    function startScan() {
+      hideAddMenu();
+      showPage('scan');
+    }
+
+    async function startCameraScan() {
+      var overlay = document.getElementById('scanner-overlay');
+      overlay.classList.add('show');
+      var video = document.getElementById('scannerVideo');
+      try {
+        scannerStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        video.srcObject = scannerStream;
+        video.setAttribute('playsinline', true);
+        await video.play();
+        scanFrame(video);
+      } catch (e) {
+        toast('无法访问摄像头: ' + e.message);
+        stopScan();
+      }
+    }
+
+    function scanFrame(video) {
+      if (!scannerStream) return;
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      function tick() {
+        if (!scannerStream) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          var w = video.videoWidth;
+          var h = video.videoHeight;
+          if (w && h) {
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            var imageData = ctx.getImageData(0, 0, w, h);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: 'dontInvert'
+            });
+            if (code && code.data) {
+              onScanResult(code.data);
+              return;
+            }
+          }
+        }
+        scannerRAF = requestAnimationFrame(tick);
+      }
+      tick();
+    }
+
+    async function onScanResult(qrData) {
+      stopScan();
+      toast('扫描成功');
+      try {
+        var data = await api('POST', '/api/chat/groups/join-by-qr', { qr_data: qrData });
+        var newId = data.id || data.group_id || (data.group && data.group.id);
+        toast('加入成功');
+        await loadGroups();
+        if (newId) {
+          openGroup(newId);
+        }
+      } catch (e) {
+        toast(e.message);
+        showPage('scan');
+      }
+    }
+
+    function stopScan() {
+      var overlay = document.getElementById('scanner-overlay');
+      overlay.classList.remove('show');
+      if (scannerRAF) {
+        cancelAnimationFrame(scannerRAF);
+        scannerRAF = null;
+      }
+      if (scannerStream) {
+        var tracks = scannerStream.getTracks();
+        for (var i = 0; i < tracks.length; i++) {
+          tracks[i].stop();
+        }
+        scannerStream = null;
+      }
+      var video = document.getElementById('scannerVideo');
+      if (video) video.srcObject = null;
+    }
+
+    // ========== Intercept settings page nav ==========
+    // Override showPage for settings/members/qr/list to trigger loads
+    var origShowPage = showPage;
+    showPage = function(name) {
+      origShowPage(name);
+      if (name === 'settings') {
+        loadSettings();
+      } else if (name === 'members') {
+        loadMembers();
+      } else if (name === 'qr') {
+        showQRPage();
+      } else if (name === 'list') {
+        loadGroups();
+      }
+    };
+
+    // ========== Init ==========
+    (function init() {
+      if (!checkAuth()) return;
+      loadGroups();
+    })();
+  </script>
+</body>
+</html>
