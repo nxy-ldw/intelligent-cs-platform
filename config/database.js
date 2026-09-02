@@ -582,8 +582,12 @@ function ensureSystemConfig() {
   }
 }
 
-ensureSystemConfig();
-ensureDefaultData();
+try {
+  ensureSystemConfig();
+  ensureDefaultData();
+} catch(e) {
+  console.error('Database initialization error:', e.message);
+}
 
 module.exports = dbWrapper;
 module.exports._raw = db;

@@ -1,12 +1,14 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const compression = require('compression');
+
+let compression;
+try { compression = require('compression'); } catch(e) { console.log('compression module not available, skipping'); }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(compression({ level: 6, threshold: 1024 }));
+if (compression) app.use(compression({ level: 6, threshold: 1024 }));
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -40,4 +42,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+}).on('error', (err) => {
+  console.error('Server failed to start:', err.message);
+  process.exit(1);
 });
