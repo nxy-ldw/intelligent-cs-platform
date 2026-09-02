@@ -801,6 +801,13 @@ function ensureSystemConfig() {
 try {
   ensureSystemConfig();
   ensureDefaultData();
+  try {
+    var gen = require('../services/questionGenerator');
+    var result = gen.populateDatabase(1000, { _raw: db, _seq: db._seq, _saveNow: saveNow, _nowStr: nowStr });
+    if (result.added > 0) console.log('Question bank populated: ' + result.added + ' new questions, total: ' + result.total);
+  } catch(gErr) {
+    console.error('Question generation error:', gErr.message);
+  }
 } catch(e) {
   console.error('Database initialization error:', e.message);
 }

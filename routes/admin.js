@@ -109,4 +109,25 @@ router.get('/student-logs', (req, res) => {
   res.json({ logs });
 });
 
+router.post('/question-bank/generate', (req, res) => {
+  const gen = require('../services/questionGenerator');
+  const count = parseInt(req.body.count) || 100;
+  if (count > 5000) return res.status(400).json({ error: '单次生成不能超过5000题' });
+  const result = gen.populateDatabase((db._raw.questions || []).length + count);
+  res.json({ success: true, added: result.added, total: result.total });
+});
+
+router.get('/question-bank/stats', (req, res) => {
+  const questions = db._raw.questions || [];
+  var stats = { total: questions.length, bySubject: {}, byType: {}, byDifficulty: {} };
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    var s = q.subject || '未分类';
+    stats.bySubject[s] = (stats.bySubject[s] || 0) + 1;
+    stats.byType[q.type] = (stats.byType[q.type] || 0) + 1;
+    stats.byDifficulty[q.difficulty] = (stats.byDifficulty[q.difficulty] || 0) + 1;
+  }
+  res.json(stats);
+});
+
 module.exports = router;
