@@ -48,19 +48,66 @@ function createWindow() {
   // 加载主页面
   mainWindow.loadURL(APP_URL);
 
+  // 设置自定义 User-Agent
+  mainWindow.webContents.setUserAgent(
+    mainWindow.webContents.getUserAgent() + ' AILearningDesktop/1.0 Electron'
+  );
+
   // 页面加载完成后显示
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
-  // 新窗口请求 - 在浏览器中打开外部链接
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+  // 每次页面加载完成后注入 CSS/JS，隐藏下载入口，适配桌面端
+  mainWindow.webContents.on('dom-ready', () => {
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        document.documentElement.setAttribute('data-app', 'desktop');
+        // 如果在下载页面，重定向到首页
+        if (location.pathname.includes('downloads')) {
+          location.href = '/';
+          return;
+        }
+        // 隐藏导航栏中的下载入口
+        document.querySelectorAll('a[href*="downloads"]').forEach(function(el) {
+          el.style.display = 'none';
+        });
+        // 隐藏导航栏下载按钮
+        document.querySelectorAll('.nav-buttons .btn-outline').forEach(function(btn) {
+          if (btn.textContent.includes('下载') || (btn.getAttribute('onclick') || '').includes('downloads')) {
+            btn.style.display = 'none';
+          }
+        });
+        // 隐藏首页下载相关区块
+        document.querySelectorAll('.hero-cta a[href*="downloads"]').forEach(function(el) {
+          el.style.display = 'none';
+        });
+        // 隐藏 footer 中的下载链接
+        document.querySelectorAll('.footer-col a[href*="downloads"]').forEach(function(el) {
+          el.style.display = 'none';
+        });
+      })();
+    `).catch(() => {});
+    // 注入桌面端专属 CSS
+    mainWindow.webContents.insertCSS(`
+      /* 桌面端：隐藏所有下载相关元素 */
+      a[href*="downloads"] { display: none !important; }
+      .nav-buttons .btn-outline[onclick*="downloads"] { display: none !important; }
+      .hero-cta a[href*="downloads"] { display: none !important; }
+      /* 桌面端：导航栏增加顶部内边距，避免被窗口标题栏遮挡 */
+      .navbar { -webkit-app-region: no-drag; }
+    `).catch(() => {});
   });
 
+  // 拦截下载页面导航，重定向到首页
   // 导航限制 - 只允许在本站点内导航
   mainWindow.webContents.on('will-navigate', (event, url) => {
+    // 桌面端禁止访问下载页面
+    if (url.includes('/downloads')) {
+      event.preventDefault();
+      mainWindow.loadURL(APP_URL);
+      return;
+    }
     // 允许站内导航
     const allowedHosts = [
       'intelligent-cs-platform-production-c547.up.railway.app',
@@ -74,6 +121,12 @@ function createWindow() {
         shell.openExternal(url);
       }
     } catch(e) {}
+  });
+
+  // 新窗口请求 - 在浏览器中打开外部链接
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   // 关闭到托盘

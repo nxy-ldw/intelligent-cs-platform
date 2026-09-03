@@ -683,6 +683,30 @@
   </style>
 </head>
 <body>
+  <script>
+    (function() {
+      var isClient = false;
+      if (window.AndroidApp && window.AndroidApp.isApp && window.AndroidApp.isApp()) {
+        document.documentElement.setAttribute('data-app', 'android');
+        isClient = true;
+      }
+      if (window.electronAPI && window.electronAPI.isDesktop) {
+        document.documentElement.setAttribute('data-app', 'desktop');
+        isClient = true;
+      }
+      if (isClient && location.pathname.includes('downloads')) {
+        location.href = '/';
+      }
+    })();
+  </script>
+  <style>
+    html[data-app] .nav-links a[href*="downloads"],
+    html[data-app] .nav-buttons .btn-outline[onclick*="downloads"],
+    html[data-app] .hero-cta a[href*="downloads"],
+    html[data-app] .footer-col a[href*="downloads"] {
+      display: none !important;
+    }
+  </style>
   <nav class="navbar" id="navbar">
     <div class="nav-inner">
       <div class="logo" onclick="scrollToTop()">

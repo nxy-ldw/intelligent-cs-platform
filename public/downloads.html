@@ -263,6 +263,20 @@
   </style>
 </head>
 <body>
+  <script>
+    (function() {
+      var isClient = false;
+      if (window.AndroidApp && window.AndroidApp.isApp && window.AndroidApp.isApp()) {
+        isClient = true;
+      }
+      if (window.electronAPI && window.electronAPI.isDesktop) {
+        isClient = true;
+      }
+      if (isClient) {
+        location.href = '/';
+      }
+    })();
+  </script>
   <nav class="navbar">
     <div class="nav-inner">
       <div class="logo" onclick="window.location.href='/'">

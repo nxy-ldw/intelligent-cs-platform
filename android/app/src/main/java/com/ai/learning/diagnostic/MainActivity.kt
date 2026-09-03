@@ -37,9 +37,15 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         swipeRefresh = findViewById(R.id.swipeRefresh)
 
-        // 下拉刷新
+        // 下拉刷新 — 仅当页面滚动到顶部时才触发
         swipeRefresh.setOnRefreshListener {
             webView.reload()
+        }
+
+        // 关键修复：只有当 WebView 内容在顶部时才允许下拉刷新
+        // 否则正常向下滑动会被 SwipeRefreshLayout 拦截导致无法滚动
+        swipeRefresh.setOnChildScrollUpCallback { _, _ ->
+            webView.scrollY > 0
         }
 
         // 下拉刷新颜色
@@ -65,6 +71,9 @@ class MainActivity : AppCompatActivity() {
         settings.displayZoomControls = false
         settings.textZoom = 100
 
+        // 自定义 User-Agent，让服务端识别 App 环境
+        settings.userAgentString = settings.userAgentString + " AILearningApp/1.0 Android"
+
         // 缓存策略
         settings.cacheMode = WebSettings.LOAD_DEFAULT
 
@@ -88,6 +97,34 @@ class MainActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
                 swipeRefresh.isRefreshing = false
                 url?.let { currentUrl = it }
+                // 注入 JS：隐藏下载相关元素，适配 App 端布局
+                view?.evaluateJavascript("""
+                    (function() {
+                        document.documentElement.setAttribute('data-app', 'android');
+                        // 隐藏导航栏中的下载入口
+                        document.querySelectorAll('a[href*="downloads"], a[href*="download"]').forEach(function(el) {
+                            var parent = el.parentElement;
+                            if (parent && parent.classList.contains('nav-links')) el.style.display = 'none';
+                        });
+                        // 隐藏导航栏下载按钮
+                        document.querySelectorAll('.nav-buttons .btn-outline').forEach(function(btn) {
+                            if (btn.textContent.includes('下载') || btn.onclick && btn.onclick.toString().includes('downloads')) {
+                                btn.style.display = 'none';
+                            }
+                        });
+                        // 隐藏首页下载相关区块
+                        document.querySelectorAll('.download-section, .cta-section').forEach(function(el) {
+                            var text = el.textContent || '';
+                            if (text.includes('下载') || text.includes('客户端')) {
+                                el.style.display = 'none';
+                            }
+                        });
+                        // 如果在下载页面，重定向到首页
+                        if (location.pathname.includes('downloads')) {
+                            location.href = '/';
+                        }
+                    })();
+                """.trimIndent(), null)
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
