@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         settings.textZoom = 100
 
         // 自定义 User-Agent，让服务端识别 App 环境
-        settings.userAgentString = settings.userAgentString + " AILearningApp/1.0.1 Android"
+        settings.userAgentString = settings.userAgentString + " AILearningApp/1.0.2 Android"
 
         settings.cacheMode = WebSettings.LOAD_DEFAULT
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
