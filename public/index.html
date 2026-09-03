@@ -60,36 +60,61 @@
     .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
     .navbar {
       position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(12, 25, 41, 0.3);
       backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(186, 230, 253, 0.8);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       z-index: 1000; transition: all 0.3s ease;
     }
-    .navbar.scrolled { box-shadow: var(--shadow-md); }
+    .navbar.scrolled {
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+    }
     .nav-inner {
       max-width: 1200px; margin: 0 auto; padding: 0 32px;
       display: flex; align-items: center; justify-content: space-between; height: 68px;
     }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: var(--text-dark); cursor: pointer; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: white; cursor: pointer; transition: color 0.3s; }
+    .navbar.scrolled .logo { color: var(--text-dark); }
     .logo-icon {
       width: 38px; height: 38px; background: var(--gradient-primary);
       border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-size: 20px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+      font-size: 20px; box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
     }
     .logo-text {
-      background: var(--gradient-primary); -webkit-background-clip: text;
+      background: linear-gradient(135deg, #93c5fd, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      transition: background 0.3s;
+    }
+    .navbar.scrolled .logo-text {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
       -webkit-text-fill-color: transparent; background-clip: text;
     }
     .nav-links { display: flex; gap: 32px; align-items: center; }
-    .nav-links a { color: var(--text-medium); font-size: 14px; font-weight: 500; transition: color 0.2s ease; position: relative; }
-    .nav-links a:hover { color: var(--primary); }
+    .nav-links a { color: rgba(226, 232, 240, 0.85); font-size: 14px; font-weight: 500; transition: color 0.2s ease; position: relative; }
+    .navbar.scrolled .nav-links a { color: var(--text-medium); }
+    .nav-links a:hover { color: white; }
+    .navbar.scrolled .nav-links a:hover { color: var(--primary); }
     .nav-links a::after {
       content: ''; position: absolute; bottom: -4px; left: 0;
-      width: 0; height: 2px; background: var(--gradient-primary); transition: width 0.3s ease;
+      width: 0; height: 2px; background: linear-gradient(135deg, #93c5fd, #22d3ee); transition: width 0.3s ease;
     }
+    .navbar.scrolled .nav-links a::after { background: var(--gradient-primary); }
     .nav-links a:hover::after { width: 100%; }
     .nav-buttons { display: flex; gap: 10px; align-items: center; }
-    .mobile-menu-btn { display: none; background: none; font-size: 24px; color: var(--text-dark); padding: 8px; }
+    .navbar .btn-outline {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.2); color: white;
+      transition: all 0.3s;
+    }
+    .navbar .btn-outline:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.08); color: white; }
+    .navbar.scrolled .btn-outline {
+      background: transparent; border: 1.5px solid var(--border); color: var(--text-dark);
+    }
+    .navbar.scrolled .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(37, 99, 235, 0.06); }
+    .mobile-menu-btn { display: none; background: none; font-size: 24px; color: white; padding: 8px; transition: color 0.3s; }
+    .navbar.scrolled .mobile-menu-btn { color: var(--text-dark); }
     .btn {
       padding: 10px 22px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
       cursor: pointer; border: none; transition: all 0.25s ease;
@@ -666,11 +691,11 @@
       </div>
       <div class="nav-links">
         <a href="#features">核心功能</a>
-        <a href="#roles">角色说明</a>
+        <a href="/downloads.html">客户端下载</a>
         <a href="#how">工作原理</a>
       </div>
       <div class="nav-buttons">
-        <button class="btn btn-outline" onclick="openModal('login')">登录</button>
+        <button class="btn btn-outline" onclick="window.location.href='/downloads.html'">&#11015; 下载</button>
         <button class="btn btn-primary" onclick="openModal('register')">免费注册</button>
       </div>
       <button class="mobile-menu-btn" onclick="toggleMobileMenu()">&#9776;</button>
@@ -697,9 +722,9 @@
         <button class="btn btn-primary btn-lg" onclick="openModal('register')">
           &#128640; 立即免费体验
         </button>
-        <button class="btn btn-outline btn-lg" onclick="scrollToSection('features')">
-          了解更多 &darr;
-        </button>
+        <a href="/downloads.html" class="btn btn-outline btn-lg" style="color:white;border-color:rgba(255,255,255,0.3);background:transparent;">
+          &#11015; 下载客户端
+        </a>
       </div>
       <div class="hero-stats">
         <div class="stat-item"><div class="stat-number">10万+</div><div class="stat-label">注册学生</div></div>
@@ -973,6 +998,7 @@
           <h4>关于</h4>
           <ul>
             <li><a href="#">关于我们</a></li>
+            <li><a href="/downloads.html">&#11015; 客户端下载</a></li>
             <li><a href="/privacy.html">隐私政策</a></li>
             <li><a href="/terms.html">用户协议</a></li>
             <li><a href="/disclaimer.html">免责声明</a></li>
