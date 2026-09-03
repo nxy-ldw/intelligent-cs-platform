@@ -39,9 +39,9 @@ class WebAppInterface(private val context: Context) {
     fun getAppVersion(): String {
         return try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            pInfo.versionName
+            pInfo.versionName ?: "1.0.3"
         } catch (e: Exception) {
-            "1.0.0"
+            "1.0.3"
         }
     }
 
