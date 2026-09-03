@@ -1,6 +1,6 @@
 {
   "name": "ai-learning-diagnostic",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI个性化学习诊断辅导系统 - 桌面端",
   "main": "main.js",
   "author": "AI Learning Platform",
