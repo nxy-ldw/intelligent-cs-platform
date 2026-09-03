@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>用户协议 - AI个性化学习诊断辅导系统</title>
+  <style>
+    :root {
+      --primary: #3b82f6; --primary-dark: #2563eb; --secondary: #06b6d4; --accent: #2dd4bf;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --text-dark: #0f172a; --text-medium: #334155; --text-light: #64748b; --text-muted: #94a3b8;
+      --bg-light: #f0f9ff; --bg-white: #ffffff; --border: #e0f2fe;
+      --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #2dd4bf 100%);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: var(--text-dark); background: var(--bg-light); line-height: 1.8; -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: var(--primary); }
+    a:hover { color: var(--primary-dark); }
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(186, 230, 253, 0.8); z-index: 1000;
+    }
+    .nav-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 60px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--text-dark); cursor: pointer; }
+    .logo-icon {
+      width: 34px; height: 34px; background: var(--gradient-primary);
+      border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .logo-text {
+      background: var(--gradient-primary); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-back { font-size: 14px; color: var(--text-light); cursor: pointer; }
+    .nav-back:hover { color: var(--primary); }
+    .page-container { max-width: 900px; margin: 0 auto; padding: 100px 24px 60px; }
+    .page-header {
+      background: white; border-radius: var(--radius-lg); padding: 40px; margin-bottom: 24px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .page-tag {
+      display: inline-block; padding: 4px 14px;
+      background: rgba(59, 130, 246, 0.1); color: var(--primary);
+      border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 14px;
+    }
+    .page-title {
+      font-size: 32px; font-weight: 800; color: var(--text-dark);
+      margin-bottom: 8px; letter-spacing: -0.02em;
+    }
+    .page-meta { font-size: 14px; color: var(--text-light); }
+    .toc {
+      background: white; border-radius: var(--radius-lg); padding: 24px 32px; margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .toc-title { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; }
+    .toc-list { list-style: none; }
+    .toc-list li { padding: 6px 0; }
+    .toc-list a { color: var(--text-medium); font-size: 14px; transition: color 0.2s; }
+    .toc-list a:hover { color: var(--primary); }
+    .toc-list .toc-num { display: inline-block; width: 28px; color: var(--text-muted); font-weight: 600; }
+    .content-card {
+      background: white; border-radius: var(--radius-lg); padding: 36px 40px; margin-bottom: 20px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .content-card h2 {
+      font-size: 20px; font-weight: 700; color: var(--text-dark);
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--border); scroll-margin-top: 80px;
+    }
+    .content-card h2 .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: var(--gradient-primary); color: white;
+      border-radius: 8px; font-size: 14px; margin-right: 10px; vertical-align: middle;
+    }
+    .content-card h3 {
+      font-size: 16px; font-weight: 600; color: var(--text-dark); margin: 18px 0 10px;
+    }
+    .content-card p { font-size: 15px; color: var(--text-medium); margin-bottom: 12px; line-height: 1.9; }
+    .content-card ul, .content-card ol { margin: 12px 0 12px 24px; }
+    .content-card li { font-size: 15px; color: var(--text-medium); margin-bottom: 8px; line-height: 1.8; }
+    .content-card strong { color: var(--text-dark); }
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(6,182,212,0.04));
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0;
+    }
+    .highlight-box p { margin-bottom: 0; font-size: 14px; }
+    .warning-box {
+      background: rgba(239, 68, 68, 0.08);
+      border-left: 4px solid var(--danger);
+      padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 16px 0;
+    }
+    .warning-box p { margin-bottom: 0; font-size: 14px; color: #991b1b; }
+    .footer {
+      text-align: center; padding: 30px 24px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .footer a { color: var(--text-light); }
+    @media (max-width: 640px) {
+      .page-container { padding: 80px 16px 40px; }
+      .page-header { padding: 28px 20px; }
+      .page-title { font-size: 24px; }
+      .toc { padding: 20px; }
+      .content-card { padding: 24px 20px; }
+      .content-card h2 { font-size: 17px; }
+      .content-card h2 .section-num { width: 28px; height: 28px; font-size: 13px; }
+      .content-card p, .content-card li { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="logo" onclick="window.location.href='/'">
+        <div class="logo-icon">&#127919;</div>
+        <span class="logo-text">AI学习诊断</span>
+      </div>
+      <div class="nav-back" onclick="window.location.href='/'">&larr; 返回首页</div>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-tag">用户协议</div>
+      <h1 class="page-title">用户服务协议</h1>
+      <p class="page-meta">最后更新日期：2024年9月3日 &nbsp;|&nbsp; 生效日期：2024年9月3日</p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">目录</div>
+      <ul class="toc-list">
+        <li><a href="#s1"><span class="toc-num">一</span>协议的接受</a></li>
+        <li><a href="#s2"><span class="toc-num">二</span>服务内容</a></li>
+        <li><a href="#s3"><span class="toc-num">三</span>账号注册与管理</a></li>
+        <li><a href="#s4"><span class="toc-num">四</span>用户行为规范</a></li>
+        <li><a href="#s5"><span class="toc-num">五</span>知识产权</a></li>
+        <li><a href="#s6"><span class="toc-num">六</span>免责声明</a></li>
+        <li><a href="#s7"><span class="toc-num">七</span>服务变更与中止</a></li>
+        <li><a href="#s8"><span class="toc-num">八</span>违约责任</a></li>
+        <li><a href="#s9"><span class="toc-num">九</span>争议解决</a></li>
+        <li><a href="#s10"><span class="toc-num">十</span>协议的修改</a></li>
+        <li><a href="#s11"><span class="toc-num">十一</span>其他条款</a></li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s1"><span class="section-num">一</span>协议的接受</h2>
+      <p>欢迎使用 AI个性化学习诊断辅导系统（以下简称"本系统"）。本协议是您与本系统运营方之间关于使用本系统服务所订立的协议。</p>
+      <div class="warning-box">
+        <p><strong>请您仔细阅读本协议的全部内容。</strong>您点击"同意"按钮或以其他方式使用本系统服务，即视为您已阅读并同意本协议的全部条款。如您不同意本协议的任何条款，请不要注册、登录或使用本系统。</p>
+      </div>
+      <p>如您未满18周岁，请在法定监护人的陪同下阅读本协议，并特别注意未成年人使用条款。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s2"><span class="section-num">二</span>服务内容</h2>
+      <h3>2.1 服务定义</h3>
+      <p>本系统是一款基于人工智能技术的在线学习诊断辅导平台，主要提供以下服务：</p>
+      <ul>
+        <li><strong>AI学情诊断：</strong>通过分析答题数据，生成个性化学习诊断报告</li>
+        <li><strong>错题分析：</strong>智能识别错题类型，归因分析错误原因</li>
+        <li><strong>AI出题与练习：</strong>根据知识点和难度智能生成练习题</li>
+        <li><strong>学习路径规划：</strong>为学生定制个性化学习提升方案</li>
+        <li><strong>班级管理：</strong>为教师提供班级学情分析和作业管理功能</li>
+        <li><strong>拍照录题：</strong>通过AI识别试卷图片，快速录入题库</li>
+      </ul>
+      <h3>2.2 服务形式</h3>
+      <p>本系统以网页端、桌面客户端和移动应用等多种形式提供服务，具体以实际提供为准。我们可能会根据服务需要调整服务形式和内容。</p>
+      <h3>2.3 服务限制</h3>
+      <p>您理解并同意，本系统基于AI技术提供服务，AI生成的内容可能存在不准确性或不完整性，仅供学习参考，不作为教学或考试的依据。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s3"><span class="section-num">三</span>账号注册与管理</h2>
+      <h3>3.1 注册要求</h3>
+      <ul>
+        <li>您需提供真实、准确、完整的注册信息</li>
+        <li>您需妥善保管账号和密码，对账号下的所有行为负责</li>
+        <li>如发现账号被盗用或存在安全漏洞，应立即通知我们</li>
+      </ul>
+      <h3>3.2 角色说明</h3>
+      <p>本系统支持三种用户角色：</p>
+      <ul>
+        <li><strong>学生用户：</strong>可进行学习、练习、查看诊断报告等</li>
+        <li><strong>教师用户：</strong>可创建班级、管理学生、布置作业、查看班级学情等</li>
+        <li><strong>管理员用户：</strong>可进行系统全局管理、用户管理、题库管理等</li>
+      </ul>
+      <h3>3.3 账号注销</h3>
+      <p>您有权随时申请注销账号。账号注销后，您的个人信息将被删除或匿名化处理，但法律法规另有规定的除外。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s4"><span class="section-num">四</span>用户行为规范</h2>
+      <p>您在使用本系统时，应遵守中华人民共和国相关法律法规，不得从事以下行为：</p>
+      <ol>
+        <li>发布、传播违法违规、淫秽色情、暴力恐怖、赌博诈骗等内容</li>
+        <li>侵犯他人知识产权、隐私权、名誉权等合法权益</li>
+        <li>利用系统漏洞进行恶意攻击、破坏系统安全</li>
+        <li>未经许可访问他人账号、窃取他人数据</li>
+        <li>恶意刷题、刷分、作弊等破坏学习公平的行为</li>
+        <li>传播病毒、木马、恶意代码等</li>
+        <li>利用本系统进行商业广告、营销推广等活动</li>
+        <li>其他违反法律法规及社会公序良俗的行为</li>
+      </ol>
+      <div class="warning-box">
+        <p>如您违反上述规定，我们有权视情节严重程度采取警告、限制功能、封禁账号等措施，并保留追究法律责任的权利。</p>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s5"><span class="section-num">五</span>知识产权</h2>
+      <h3>5.1 系统知识产权</h3>
+      <p>本系统的所有内容，包括但不限于文字、图片、音频、视频、软件、界面设计、商标、标识等，均受中华人民共和国法律及相关国际公约的保护，其知识产权归本系统运营方所有。</p>
+      <h3>5.2 用户内容</h3>
+      <p>您在使用本系统过程中上传、发布的内容（包括但不限于题目、笔记、评论等），您仍享有合法的知识产权。但您授予我们一项免费的、非独占的、可再许可的使用权，用于提供和改进本系统服务。</p>
+      <h3>5.3 AI生成内容</h3>
+      <p>本系统AI生成的题目、解析、诊断报告等内容，其知识产权归属根据相关法律法规确定。您可以将这些内容用于个人学习目的，但未经许可不得用于商业用途。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s6"><span class="section-num">六</span>免责声明</h2>
+      <div class="highlight-box">
+        <p><strong>您明确理解并同意，在法律允许的最大范围内，本系统按"现状"和"可获得"的状态提供服务，不对服务的适用性、可靠性、准确性作出任何明示或暗示的保证。</strong></p>
+      </div>
+      <ul>
+        <li>AI生成的内容可能存在错误或偏差，仅供学习参考，不构成教学承诺</li>
+        <li>系统可能因维护、升级、网络故障等原因中断，我们不承担由此造成的损失</li>
+        <li>我们不对第三方链接或服务的内容和安全性负责</li>
+        <li>因不可抗力导致的服务中断或数据丢失，我们不承担责任</li>
+        <li>学习效果因人而异，我们不对用户的学习成绩或考试结果作出任何承诺</li>
+      </ul>
+      <p>完整免责条款请参阅<a href="/disclaimer.html">免责声明</a>页面。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s7"><span class="section-num">七</span>服务变更与中止</h2>
+      <p>您理解并同意，我们可能会根据业务发展需要对服务内容进行调整、升级或变更。在发生重大变更时，我们会提前通知您。</p>
+      <p>发生以下情形时，我们有权中止或终止服务：</p>
+      <ul>
+        <li>您违反本协议的约定</li>
+        <li>您的账号长期未使用且符合注销条件</li>
+        <li>因法律法规要求或政府主管部门指令</li>
+        <li>因不可抗力或技术原因无法继续提供服务</li>
+        <li>运营方决定终止服务</li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s8"><span class="section-num">八</span>违约责任</h2>
+      <p>如您违反本协议约定，我们有权采取以下一项或多项措施：</p>
+      <ol>
+        <li>发出警告，要求您停止违规行为</li>
+        <li>限制或暂停部分或全部服务功能</li>
+        <li>封禁账号，终止服务</li>
+        <li>删除违规内容</li>
+        <li>依法追究法律责任</li>
+      </ol>
+      <p>如因您的违规行为给我们或第三方造成损失的，您应承担相应的赔偿责任。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s9"><span class="section-num">九</span>争议解决</h2>
+      <p>本协议的订立、执行和解释及争议的解决均应适用中华人民共和国法律。</p>
+      <p>如双方就本协议内容或其执行发生任何争议，双方应友好协商解决；协商不成时，任何一方均可向运营方所在地有管辖权的人民法院提起诉讼。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s10"><span class="section-num">十</span>协议的修改</h2>
+      <p>我们可能会根据法律法规的变化或服务的需要，不时修改本协议。修改后的协议会在本页面公布，并通过适当方式通知您。</p>
+      <p>如您继续使用本系统服务，即视为您同意修改后的协议。如您不同意修改后的协议，请停止使用本系统服务。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s11"><span class="section-num">十一</span>其他条款</h2>
+      <h3>11.1 通知与送达</h3>
+      <p>我们可能通过站内信、邮件、系统通知等方式向您送达通知，通知于发送之日视为已送达。</p>
+      <h3>11.2 可分性</h3>
+      <p>本协议任何条款的无效或不可执行，不影响其他条款的效力。</p>
+      <h3>11.3 标题</h3>
+      <p>本协议中的标题仅为方便阅读而设，不影响对协议内容的解释。</p>
+      <h3>11.4 联系我们</h3>
+      <p>如您对本协议有任何疑问，请通过以下方式联系我们：</p>
+      <ul>
+        <li><strong>邮箱：</strong>support@ai-learning.example.com</li>
+        <li><strong>工作时间：</strong>周一至周五 9:00-18:00</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <p>© 2024 AI个性化学习诊断辅导系统 版权所有 &nbsp;|&nbsp; <a href="/">首页</a> &nbsp;·&nbsp; <a href="/privacy.html">隐私政策</a> &nbsp;·&nbsp; <a href="/disclaimer.html">免责声明</a></p>
+    </div>
+  </div>
+</body>
+</html>

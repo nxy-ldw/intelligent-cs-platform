@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隐私政策 - AI个性化学习诊断辅导系统</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #06b6d4;
+      --accent: #2dd4bf;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-dark: #0f172a;
+      --text-medium: #334155;
+      --text-light: #64748b;
+      --text-muted: #94a3b8;
+      --bg-light: #f0f9ff;
+      --bg-white: #ffffff;
+      --border: #e0f2fe;
+      --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #2dd4bf 100%);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: var(--text-dark);
+      background: var(--bg-light);
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: var(--primary); }
+    a:hover { color: var(--primary-dark); }
+
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(186, 230, 253, 0.8);
+      z-index: 1000;
+    }
+    .nav-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 60px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--text-dark); cursor: pointer; }
+    .logo-icon {
+      width: 34px; height: 34px; background: var(--gradient-primary);
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text {
+      background: var(--gradient-primary); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-back { font-size: 14px; color: var(--text-light); cursor: pointer; }
+    .nav-back:hover { color: var(--primary); }
+
+    .page-container {
+      max-width: 900px; margin: 0 auto; padding: 100px 24px 60px;
+    }
+    .page-header {
+      background: white; border-radius: var(--radius-lg);
+      padding: 40px; margin-bottom: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .page-tag {
+      display: inline-block; padding: 4px 14px;
+      background: rgba(59, 130, 246, 0.1); color: var(--primary);
+      border-radius: 999px; font-size: 12px; font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .page-title {
+      font-size: 32px; font-weight: 800; color: var(--text-dark);
+      margin-bottom: 8px; letter-spacing: -0.02em;
+    }
+    .page-meta {
+      font-size: 14px; color: var(--text-light);
+    }
+    .toc {
+      background: white; border-radius: var(--radius-lg);
+      padding: 24px 32px; margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .toc-title {
+      font-size: 15px; font-weight: 700; color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+    .toc-list { list-style: none; }
+    .toc-list li {
+      padding: 6px 0;
+    }
+    .toc-list a {
+      color: var(--text-medium); font-size: 14px;
+      transition: color 0.2s;
+    }
+    .toc-list a:hover { color: var(--primary); }
+    .toc-list .toc-num {
+      display: inline-block; width: 24px; color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .content-card {
+      background: white; border-radius: var(--radius-lg);
+      padding: 36px 40px; margin-bottom: 20px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .content-card h2 {
+      font-size: 20px; font-weight: 700; color: var(--text-dark);
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      scroll-margin-top: 80px;
+    }
+    .content-card h2 .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: var(--gradient-primary); color: white;
+      border-radius: 8px; font-size: 14px;
+      margin-right: 10px; vertical-align: middle;
+    }
+    .content-card h3 {
+      font-size: 16px; font-weight: 600; color: var(--text-dark);
+      margin: 18px 0 10px;
+    }
+    .content-card p {
+      font-size: 15px; color: var(--text-medium);
+      margin-bottom: 12px; line-height: 1.9;
+    }
+    .content-card ul, .content-card ol {
+      margin: 12px 0 12px 24px;
+    }
+    .content-card li {
+      font-size: 15px; color: var(--text-medium);
+      margin-bottom: 8px; line-height: 1.8;
+    }
+    .content-card strong { color: var(--text-dark); }
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(6,182,212,0.04));
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px; border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .highlight-box p { margin-bottom: 0; font-size: 14px; }
+    .warning-box {
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 4px solid var(--warning);
+      padding: 16px 20px; border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+    }
+    .warning-box p { margin-bottom: 0; font-size: 14px; color: #92400e; }
+
+    .footer {
+      text-align: center; padding: 30px 24px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .footer a { color: var(--text-light); }
+
+    @media (max-width: 640px) {
+      .page-container { padding: 80px 16px 40px; }
+      .page-header { padding: 28px 20px; }
+      .page-title { font-size: 24px; }
+      .toc { padding: 20px; }
+      .content-card { padding: 24px 20px; }
+      .content-card h2 { font-size: 17px; }
+      .content-card h2 .section-num { width: 28px; height: 28px; font-size: 13px; }
+      .content-card p, .content-card li { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="logo" onclick="window.location.href='/'">
+        <div class="logo-icon">&#127919;</div>
+        <span class="logo-text">AI学习诊断</span>
+      </div>
+      <div class="nav-back" onclick="window.location.href='/'">&larr; 返回首页</div>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-tag">隐私政策</div>
+      <h1 class="page-title">隐私政策</h1>
+      <p class="page-meta">最后更新日期：2024年9月3日 &nbsp;|&nbsp; 生效日期：2024年9月3日</p>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">目录</div>
+      <ul class="toc-list">
+        <li><a href="#s1"><span class="toc-num">1</span>引言</a></li>
+        <li><a href="#s2"><span class="toc-num">2</span>我们收集的信息</a></li>
+        <li><a href="#s3"><span class="toc-num">3</span>我们如何使用信息</a></li>
+        <li><a href="#s4"><span class="toc-num">4</span>信息共享与披露</a></li>
+        <li><a href="#s5"><span class="toc-num">5</span>信息存储与安全</a></li>
+        <li><a href="#s6"><span class="toc-num">6</span>您的权利</a></li>
+        <li><a href="#s7"><span class="toc-num">7</span>未成年人保护</a></li>
+        <li><a href="#s8"><span class="toc-num">8</span>Cookie 与类似技术</a></li>
+        <li><a href="#s9"><span class="toc-num">9</span>第三方服务</a></li>
+        <li><a href="#s10"><span class="toc-num">10</span>政策更新</a></li>
+        <li><a href="#s11"><span class="toc-num">11</span>联系我们</a></li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s1"><span class="section-num">1</span>引言</h2>
+      <p>欢迎使用 AI个性化学习诊断辅导系统（以下简称"本系统"或"我们"）。我们深知个人信息对您的重要性，并会尽全力保护您的个人信息安全可靠。我们致力于维持您对我们的信任，恪守以下原则保护您的个人信息：权责一致原则、目的明确原则、选择同意原则、最少够用原则、确保安全原则、主体参与原则、公开透明原则等。</p>
+      <p>本隐私政策旨在帮助您了解我们收集、使用、存储、共享和保护您个人信息的方式。请您在使用本系统前，仔细阅读并充分理解本政策的全部内容。</p>
+      <div class="highlight-box">
+        <p><strong>特别提示：</strong>本系统主要面向中小学学生提供AI学习诊断服务。对于未满14周岁的未成年人用户，我们要求其监护人阅读并同意本隐私政策，并在监护人指导下使用本系统。</p>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s2"><span class="section-num">2</span>我们收集的信息</h2>
+      <p>我们仅收集为提供服务所必需的最少信息，包括：</p>
+      <h3>2.1 您主动提供的信息</h3>
+      <ul>
+        <li><strong>账号信息：</strong>注册时您提供的用户名、密码、手机号、QQ号等联系方式</li>
+        <li><strong>身份信息：</strong>您选择的角色（学生/教师/管理员）、真实姓名（如提供）</li>
+        <li><strong>班级信息：</strong>学生加入班级时提供的班级代码，教师创建的班级名称</li>
+        <li><strong>学习内容：</strong>您上传的题目、笔记、答题内容、学习记录等</li>
+      </ul>
+      <h3>2.2 自动收集的信息</h3>
+      <ul>
+        <li><strong>设备信息：</strong>设备型号、操作系统版本、唯一设备标识符</li>
+        <li><strong>日志信息：</strong>使用时长、访问页面、点击操作、错误日志</li>
+        <li><strong>网络信息：</strong>IP地址、网络类型（WiFi/4G/5G）</li>
+        <li><strong>学习数据：</strong>答题记录、错题记录、学习进度、诊断报告数据</li>
+      </ul>
+      <h3>2.3 特殊信息说明</h3>
+      <div class="warning-box">
+        <p>本系统使用 AI 技术提供学习诊断和题目生成服务。您的答题数据、学习内容等可能会被发送给 AI 服务提供商进行处理，但我们会要求其严格保密，不得用于其他目的。</p>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s3"><span class="section-num">3</span>我们如何使用信息</h2>
+      <p>我们收集和使用您的个人信息，严格遵循合法、正当、必要的原则，用于以下目的：</p>
+      <ol>
+        <li><strong>提供核心服务：</strong>AI学情诊断、错题分析、习题推送、学习路径规划等</li>
+        <li><strong>账号管理：</strong>注册、登录、身份验证、密码找回等</li>
+        <li><strong>服务改进：</strong>分析使用情况，优化算法模型，提升服务质量</li>
+        <li><strong>安全保障：</strong>防止欺诈、滥用行为，保障账号和系统安全</li>
+        <li><strong>客户支持：</strong>响应用户咨询、投诉和建议</li>
+        <li><strong>个性化推荐：</strong>基于学习数据提供个性化的学习内容推荐</li>
+      </ol>
+      <p>我们不会将您的个人信息用于上述目的以外的其他用途。如确需超出本政策所述目的使用，我们会事先再次向您告知并征得您的明示同意。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s4"><span class="section-num">4</span>信息共享与披露</h2>
+      <p>我们高度重视您的个人信息，严格限制信息共享。仅在以下情况下，我们可能会共享您的个人信息：</p>
+      <h3>4.1 事先获得您的同意</h3>
+      <p>在获得您明确同意后，我们会与其他方共享您的个人信息。</p>
+      <h3>4.2 服务提供商</h3>
+      <p>我们可能会向代表我们提供服务的第三方服务提供商提供信息，包括：</p>
+      <ul>
+        <li>云服务提供商（服务器托管、数据存储）</li>
+        <li>AI 服务提供商（题目生成、智能诊断）</li>
+        <li>支付服务提供商（如有付费功能）</li>
+      </ul>
+      <p>我们会与这些服务商签订严格的保密协议，要求其按照我们的说明和本隐私政策的要求处理个人信息。</p>
+      <h3>4.3 法定情形</h3>
+      <p>在以下情况下，我们可能会依法共享、披露您的个人信息，无需征得您的同意：</p>
+      <ul>
+        <li>为履行法定职责或者法定义务所必需</li>
+        <li>为应对突发公共卫生事件，或者紧急情况下为保护自然人的生命健康和财产安全所必需</li>
+        <li>依照法律法规规定，或者应司法机关、行政机关的合法要求</li>
+        <li>为维护我们或用户的合法权益所必需</li>
+      </ul>
+      <div class="warning-box">
+        <p><strong>我们不会出售您的个人信息。</strong>我们不会将您的个人信息出售给任何第三方用于商业营销目的。</p>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s5"><span class="section-num">5</span>信息存储与安全</h2>
+      <h3>5.1 存储地点</h3>
+      <p>您的个人信息将存储于中华人民共和国境内。如需跨境传输，我们会严格遵守相关法律法规。</p>
+      <h3>5.2 存储期限</h3>
+      <p>我们仅在实现目的所必需的最短期限内保留您的个人信息。超出保留期限后，我们将对您的个人信息进行删除或匿名化处理。</p>
+      <h3>5.3 安全措施</h3>
+      <ul>
+        <li>采用行业标准的加密技术（SSL/TLS）保护数据传输</li>
+        <li>敏感信息（如密码）采用加盐哈希存储，不可逆</li>
+        <li>严格的数据访问权限控制和身份认证机制</li>
+        <li>定期安全审计和漏洞扫描</li>
+        <li>完善的数据安全管理制度和应急响应机制</li>
+      </ul>
+      <p>尽管我们采取了上述合理的安全措施，但互联网并非绝对安全的环境，我们将尽力保护您的信息安全，但无法保证绝对安全。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s6"><span class="section-num">6</span>您的权利</h2>
+      <p>您对您的个人信息享有以下权利：</p>
+      <ol>
+        <li><strong>知情权：</strong>您有权了解我们如何处理您的个人信息</li>
+        <li><strong>访问权：</strong>您有权访问您的个人信息，可在个人中心查看</li>
+        <li><strong>更正权：</strong>您有权更正不准确或不完整的个人信息</li>
+        <li><strong>删除权：</strong>在特定情形下，您有权要求删除您的个人信息</li>
+        <li><strong>撤回同意：</strong>您有权撤回对个人信息处理的授权同意</li>
+        <li><strong>注销账号：</strong>您有权申请注销账号，注销后我们将删除或匿名化处理您的信息</li>
+        <li><strong>投诉举报：</strong>您有权对我们的个人信息处理行为进行投诉</li>
+      </ol>
+      <p>如需行使上述权利，请通过本政策第11条提供的联系方式与我们联系。我们会在收到请求后15个工作日内响应。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s7"><span class="section-num">7</span>未成年人保护</h2>
+      <p>我们非常重视未成年人的个人信息保护。</p>
+      <ul>
+        <li>本系统不主动向14周岁以下的儿童收集个人信息</li>
+        <li>如您为未成年人，请在监护人的陪同下阅读本政策，并在监护人同意后使用本系统</li>
+        <li>对于经监护人同意而收集的未成年人信息，我们只会在法律允许、监护人明确同意或保护未成年人所必要的范围内处理</li>
+        <li>监护人如对未成年人使用我们的服务或其向我们提供的个人信息有任何疑问，请通过第11条的联系方式与我们联系</li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s8"><span class="section-num">8</span>Cookie 与类似技术</h2>
+      <p>为确保网站正常运转、提升用户体验，我们可能会在您的设备上存储 Cookie 等小型数据文件。</p>
+      <ul>
+        <li><strong>必要 Cookie：</strong>用于维持登录状态、记住用户偏好等基本功能</li>
+        <li><strong>统计 Cookie：</strong>用于了解网站使用情况，帮助我们改进服务</li>
+      </ul>
+      <p>您可以通过浏览器设置管理或删除 Cookie，但这可能影响部分功能的正常使用。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s9"><span class="section-num">9</span>第三方服务</h2>
+      <p>本系统可能包含第三方服务的链接或集成，包括但不限于：</p>
+      <ul>
+        <li>AI 模型服务提供商</li>
+        <li>云存储和计算服务</li>
+        <li>内容分发网络（CDN）</li>
+      </ul>
+      <p>这些第三方服务有其独立的隐私政策，我们不对其行为负责。我们建议您在使用这些服务前查阅其隐私政策。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s10"><span class="section-num">10</span>政策更新</h2>
+      <p>我们可能会适时修订本隐私政策。当政策发生重大变更时，我们会通过系统通知、弹窗提示等显著方式告知您。</p>
+      <p>对于重大变更，我们还会提供更为显著的通知（包括对于某些服务，我们会通过电子邮件或站内信通知隐私政策的具体变更内容）。</p>
+      <p>请您注意，只有在您同意更新后的隐私政策后，我们才会按照更新后的政策处理您的个人信息。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s11"><span class="section-num">11</span>联系我们</h2>
+      <p>如您对本隐私政策有任何疑问、意见或建议，或需要行使您的个人信息权利，请通过以下方式与我们联系：</p>
+      <ul>
+        <li><strong>邮箱：</strong>support@ai-learning.example.com</li>
+        <li><strong>地址：</strong>中国 · 教育科技研发中心</li>
+        <li><strong>工作时间：</strong>周一至周五 9:00-18:00</li>
+      </ul>
+      <p>一般情况下，我们会在15个工作日内回复您的请求。</p>
+    </div>
+
+    <div class="footer">
+      <p>© 2024 AI个性化学习诊断辅导系统 版权所有 &nbsp;|&nbsp; <a href="/">首页</a> &nbsp;·&nbsp; <a href="/terms.html">用户协议</a> &nbsp;·&nbsp; <a href="/disclaimer.html">免责声明</a></p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>免责声明 - AI个性化学习诊断辅导系统</title>
+  <style>
+    :root {
+      --primary: #3b82f6; --primary-dark: #2563eb; --secondary: #06b6d4; --accent: #2dd4bf;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --text-dark: #0f172a; --text-medium: #334155; --text-light: #64748b; --text-muted: #94a3b8;
+      --bg-light: #f0f9ff; --bg-white: #ffffff; --border: #e0f2fe;
+      --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #2dd4bf 100%);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: var(--text-dark); background: var(--bg-light); line-height: 1.8; -webkit-font-smoothing: antialiased;
+    }
+    a { text-decoration: none; color: var(--primary); }
+    a:hover { color: var(--primary-dark); }
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(186, 230, 253, 0.8); z-index: 1000;
+    }
+    .nav-inner {
+      max-width: 900px; margin: 0 auto; padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between; height: 60px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 16px; color: var(--text-dark); cursor: pointer; }
+    .logo-icon {
+      width: 34px; height: 34px; background: var(--gradient-primary);
+      border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .logo-text {
+      background: var(--gradient-primary); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .nav-back { font-size: 14px; color: var(--text-light); cursor: pointer; }
+    .nav-back:hover { color: var(--primary); }
+    .page-container { max-width: 900px; margin: 0 auto; padding: 100px 24px 60px; }
+    .page-header {
+      background: white; border-radius: var(--radius-lg); padding: 40px; margin-bottom: 24px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .page-tag {
+      display: inline-block; padding: 4px 14px;
+      background: rgba(245, 158, 11, 0.12); color: #d97706;
+      border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 14px;
+    }
+    .page-title {
+      font-size: 32px; font-weight: 800; color: var(--text-dark);
+      margin-bottom: 8px; letter-spacing: -0.02em;
+    }
+    .page-meta { font-size: 14px; color: var(--text-light); }
+    .toc {
+      background: white; border-radius: var(--radius-lg); padding: 24px 32px; margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .toc-title { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; }
+    .toc-list { list-style: none; }
+    .toc-list li { padding: 6px 0; }
+    .toc-list a { color: var(--text-medium); font-size: 14px; transition: color 0.2s; }
+    .toc-list a:hover { color: var(--primary); }
+    .toc-list .toc-num { display: inline-block; width: 28px; color: var(--text-muted); font-weight: 600; }
+    .content-card {
+      background: white; border-radius: var(--radius-lg); padding: 36px 40px; margin-bottom: 20px;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    }
+    .content-card h2 {
+      font-size: 20px; font-weight: 700; color: var(--text-dark);
+      margin-bottom: 14px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--border); scroll-margin-top: 80px;
+    }
+    .content-card h2 .section-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #f59e0b, #ef4444); color: white;
+      border-radius: 8px; font-size: 14px; margin-right: 10px; vertical-align: middle;
+    }
+    .content-card h3 {
+      font-size: 16px; font-weight: 600; color: var(--text-dark); margin: 18px 0 10px;
+    }
+    .content-card p { font-size: 15px; color: var(--text-medium); margin-bottom: 12px; line-height: 1.9; }
+    .content-card ul, .content-card ol { margin: 12px 0 12px 24px; }
+    .content-card li { font-size: 15px; color: var(--text-medium); margin-bottom: 8px; line-height: 1.8; }
+    .content-card strong { color: var(--text-dark); }
+    .warning-banner {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.08));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-md); padding: 24px 28px; margin-bottom: 24px;
+      display: flex; gap: 16px; align-items: flex-start;
+    }
+    .warning-banner .icon { font-size: 36px; flex-shrink: 0; }
+    .warning-banner .text h3 { font-size: 18px; color: #92400e; margin-bottom: 8px; }
+    .warning-banner .text p { font-size: 14px; color: #78350f; margin-bottom: 0; line-height: 1.7; }
+    .disclaimer-item {
+      display: flex; gap: 14px; padding: 14px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .disclaimer-item:last-child { border-bottom: none; }
+    .disclaimer-item .dot {
+      width: 8px; height: 8px; background: var(--warning);
+      border-radius: 50%; flex-shrink: 0; margin-top: 10px;
+    }
+    .disclaimer-item h4 {
+      font-size: 15px; font-weight: 600; color: var(--text-dark); margin-bottom: 4px;
+    }
+    .disclaimer-item p {
+      font-size: 14px; color: var(--text-medium); margin-bottom: 0;
+    }
+    .footer {
+      text-align: center; padding: 30px 24px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .footer a { color: var(--text-light); }
+    @media (max-width: 640px) {
+      .page-container { padding: 80px 16px 40px; }
+      .page-header { padding: 28px 20px; }
+      .page-title { font-size: 24px; }
+      .toc { padding: 20px; }
+      .content-card { padding: 24px 20px; }
+      .content-card h2 { font-size: 17px; }
+      .content-card h2 .section-num { width: 28px; height: 28px; font-size: 13px; }
+      .content-card p, .content-card li { font-size: 14px; }
+      .warning-banner { flex-direction: column; padding: 20px; }
+      .warning-banner .icon { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="logo" onclick="window.location.href='/'">
+        <div class="logo-icon">&#127919;</div>
+        <span class="logo-text">AI学习诊断</span>
+      </div>
+      <div class="nav-back" onclick="window.location.href='/'">&larr; 返回首页</div>
+    </div>
+  </nav>
+
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-tag">免责声明</div>
+      <h1 class="page-title">免责声明</h1>
+      <p class="page-meta">最后更新日期：2024年9月3日 &nbsp;|&nbsp; 生效日期：2024年9月3日</p>
+    </div>
+
+    <div class="warning-banner">
+      <div class="icon">&#9888;&#65039;</div>
+      <div class="text">
+        <h3>重要提示</h3>
+        <p>本系统为AI辅助学习工具，所有内容均由人工智能算法自动生成，仅供学习参考使用。请您在使用前仔细阅读以下免责声明，使用本系统即表示您已阅读并同意全部条款。</p>
+      </div>
+    </div>
+
+    <div class="toc">
+      <div class="toc-title">目录</div>
+      <ul class="toc-list">
+        <li><a href="#s1"><span class="toc-num">1</span>关于AI生成内容</a></li>
+        <li><a href="#s2"><span class="toc-num">2</span>关于学习效果</a></li>
+        <li><a href="#s3"><span class="toc-num">3</span>关于诊断结果</a></li>
+        <li><a href="#s4"><span class="toc-num">4</span>关于服务可用性</a></li>
+        <li><a href="#s5"><span class="toc-num">5</span>关于数据安全</a></li>
+        <li><a href="#s6"><span class="toc-num">6</span>关于第三方服务</a></li>
+        <li><a href="#s7"><span class="toc-num">7</span>关于用户内容</a></li>
+        <li><a href="#s8"><span class="toc-num">8</span>关于未成年人</a></li>
+        <li><a href="#s9"><span class="toc-num">9</span>责任限制</a></li>
+        <li><a href="#s10"><span class="toc-num">10</span>其他说明</a></li>
+      </ul>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s1"><span class="section-num">1</span>关于AI生成内容</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>内容可能存在错误</h4>
+          <p>本系统中的题目、解析、诊断报告、学习建议等内容均由人工智能（AI）算法自动生成。AI可能会产生"幻觉"，即输出看似合理但实际错误的内容。所有AI生成内容仅供参考，请务必结合教材、课堂内容和专业教师的指导进行学习。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不保证内容准确性</h4>
+          <p>我们尽力确保AI生成内容的质量和准确性，但不对内容的完全正确性、完整性和可靠性作出保证。对于因使用AI生成内容而导致的任何错误决策或学习偏差，我们不承担责任。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不构成教学承诺</h4>
+          <p>AI生成的内容不构成任何教学承诺或考试保证。学习成绩的提升取决于多种因素，包括但不限于学生的学习态度、基础水平、练习时间等。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s2"><span class="section-num">2</span>关于学习效果</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>效果因人而异</h4>
+          <p>学习效果因个人基础、学习习惯、努力程度等因素而异。本系统提供的诊断报告和学习建议仅作为参考工具，不保证任何特定的学习效果或成绩提升。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不能替代教师</h4>
+          <p>本系统是辅助学习工具，不能替代专业教师的教学和辅导。重要的学习问题、知识难点建议向学校老师或专业教育机构咨询。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不能替代教材</h4>
+          <p>系统中的题目和知识点总结不能替代官方教材和教学大纲。建议以学校指定的教材和课程标准为主要学习依据。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s3"><span class="section-num">3</span>关于诊断结果</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>诊断为算法估计</h4>
+          <p>学情诊断报告是基于学生答题数据通过算法分析得出的估计结果，可能存在偏差。诊断结果中的知识掌握程度、薄弱点分析等仅供参考，不应作为评价学生学习能力的唯一依据。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>数据量影响准确性</h4>
+          <p>诊断结果的准确性与答题数据量相关。答题数据越少，诊断结果的参考价值越低。建议积累足够的练习数据后再参考诊断报告。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不作心理评估</h4>
+          <p>本系统的诊断仅针对知识掌握程度，不涉及任何心理、智力或能力评估。不得将诊断结果用于评价学生的智力水平或学习能力。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s4"><span class="section-num">4</span>关于服务可用性</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>服务可能中断</h4>
+          <p>本系统可能因系统维护、升级、网络故障、第三方服务中断、不可抗力等原因导致服务暂停或中断。我们会尽力减少中断时间，但不对服务中断造成的损失承担责任。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>功能可能调整</h4>
+          <p>我们可能会根据产品规划对系统功能进行调整、升级或下线。在发生重大变更时，我们会提前通知用户，但不保证所有功能永久可用。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>不保证无故障</h4>
+          <p>我们致力于提供稳定可靠的服务，但不保证服务不会中断、没有错误或完全安全。系统可能存在未知的bug或安全漏洞。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s5"><span class="section-num">5</span>关于数据安全</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>安全措施的局限性</h4>
+          <p>我们采取了合理的技术和管理措施保护您的个人信息和学习数据，但互联网环境并非百分之百安全，我们无法保证您的数据绝对不会被泄露、丢失或损坏。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>用户自行保管账号</h4>
+          <p>您有责任妥善保管账号和密码。因您个人原因导致账号被盗、密码泄露而造成的数据损失或隐私泄露，由您自行承担责任。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>数据备份</h4>
+          <p>我们会定期备份数据，但不对数据的永久保存作出保证。建议您自行备份重要的学习数据和资料。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s6"><span class="section-num">6</span>关于第三方服务</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>第三方AI服务</h4>
+          <p>本系统集成了第三方AI服务提供商的API用于题目生成和诊断分析。第三方服务的质量、稳定性和数据处理政策不在我们的控制范围内，因第三方服务问题导致的任何损失，我们不承担责任。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>外部链接</h4>
+          <p>系统中可能包含指向第三方网站或服务的链接。我们不对这些外部网站的内容、隐私政策或服务质量负责。您访问第三方网站时应自行承担风险。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>云服务依赖</h4>
+          <p>本系统部署在云服务平台上，云服务的可用性、稳定性和安全性受云服务提供商影响。因云服务故障导致的问题，我们不承担责任。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s7"><span class="section-num">7</span>关于用户内容</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>用户上传内容</h4>
+          <p>用户上传的题目、图片、笔记等内容由用户自行负责其合法性和准确性。对于因用户上传内容侵犯他人权益而引起的纠纷，由上传用户自行承担责任。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>OCR识别结果</h4>
+          <p>拍照录题功能的识别结果由AI自动提取，可能存在识别错误。请您在录入后仔细核对题目内容，确认无误后再使用。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s8"><span class="section-num">8</span>关于未成年人</h2>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>监护人指导</h4>
+          <p>未成年人使用本系统应在监护人的指导和监督下进行。监护人应关注未成年人的使用情况，确保其合理使用学习工具，避免过度依赖AI。</p>
+        </div>
+      </div>
+      <div class="disclaimer-item">
+        <div class="dot"></div>
+        <div>
+          <h4>防止作弊</h4>
+          <p>本系统旨在辅助学习，不应被用于考试作弊或作业抄袭。监护人应引导未成年人正确使用本系统，培养独立思考能力。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s9"><span class="section-num">9</span>责任限制</h2>
+      <p>在法律允许的最大范围内，我们不对以下损失承担责任：</p>
+      <ul>
+        <li>因使用或无法使用本系统而导致的任何直接或间接损失</li>
+        <li>因AI生成内容错误或不准确导致的学习偏差或成绩影响</li>
+        <li>因服务中断、数据丢失导致的损失</li>
+        <li>因第三方服务故障导致的损失</li>
+        <li>因不可抗力导致的损失</li>
+        <li>间接的、附带的、惩罚性的或后果性的损害</li>
+      </ul>
+      <p>无论在何种情况下，我们对您的全部赔偿责任不超过您已支付的服务费用（如有）。</p>
+    </div>
+
+    <div class="content-card">
+      <h2 id="s10"><span class="section-num">10</span>其他说明</h2>
+      <ul>
+        <li>本免责声明的解释权归本系统运营方所有</li>
+        <li>如本免责声明的任何部分被认定为无效或不可执行，其余部分仍然有效</li>
+        <li>我们可能会不时更新本免责声明，更新后的内容将在本页面公布</li>
+        <li>您对本系统的使用，即视为您同意本免责声明的全部内容</li>
+        <li>如您对本免责声明有任何疑问，请通过下方联系方式与我们联系</li>
+      </ul>
+      <div class="highlight-box">
+        <p><strong>感谢您的信任与理解。</strong>我们将持续努力提升系统质量，为您提供更好的学习辅助服务。如发现问题或有改进建议，欢迎随时反馈。</p>
+      </div>
+      <p style="margin-top:16px;text-align:center;font-size:14px;color:var(--text-light);">
+        联系邮箱：support@ai-learning.example.com
+      </p>
+    </div>
+
+    <div class="footer">
+      <p>© 2024 AI个性化学习诊断辅导系统 版权所有 &nbsp;|&nbsp; <a href="/">首页</a> &nbsp;·&nbsp; <a href="/privacy.html">隐私政策</a> &nbsp;·&nbsp; <a href="/terms.html">用户协议</a></p>
+    </div>
+  </div>
+</body>
+</html>
