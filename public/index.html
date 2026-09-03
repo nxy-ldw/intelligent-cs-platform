@@ -7,29 +7,36 @@
   <title>AI个性化学习诊断辅导系统 - 智能驱动，精准提分</title>
   <style>
     :root {
-      --primary: #3b82f6;
-      --primary-dark: #2563eb;
-      --secondary: #06b6d4;
-      --accent: #2dd4bf;
-      --success: #10b981;
-      --warning: #f59e0b;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-deep: #1e3a8a;
+      --secondary: #0891b2;
+      --secondary-deep: #0e7490;
+      --accent: #14b8a6;
+      --accent-deep: #0d9488;
+      --success: #059669;
+      --warning: #d97706;
       --warning-light: #fef3c7;
-      --warning-dark: #d97706;
-      --danger: #ef4444;
+      --warning-dark: #b45309;
+      --danger: #dc2626;
       --text-dark: #0f172a;
       --text-medium: #334155;
       --text-light: #64748b;
       --text-muted: #94a3b8;
-      --bg-light: #f0f9ff;
+      --bg-light: #f1f5f9;
+      --bg-deep: #e2e8f0;
       --bg-white: #ffffff;
-      --border: #e0f2fe;
-      --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 50%, #2dd4bf 100%);
-      --gradient-purple: linear-gradient(135deg, #1e3a8a 0%, #0c4a6e 35%, #0e7490 65%, #06b6d4 100%);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-      --shadow-purple: 0 10px 30px rgba(59, 130, 246, 0.3);
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 40%, #0891b2 75%, #14b8a6 100%);
+      --gradient-purple: linear-gradient(135deg, #0c1929 0%, #1e3a8a 40%, #0e7490 75%, #0891b2 100%);
+      --gradient-deep: linear-gradient(135deg, #0c1929 0%, #1e293b 100%);
+      --gradient-soft: linear-gradient(135deg, #1e3a8a 0%, #0e7490 100%);
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 8px -4px rgba(15, 23, 42, 0.08);
+      --shadow-xl: 0 24px 48px -12px rgba(15, 23, 42, 0.18), 0 10px 20px -6px rgba(15, 23, 42, 0.1);
+      --shadow-primary: 0 8px 28px rgba(30, 58, 138, 0.35);
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
@@ -90,35 +97,45 @@
       touch-action: manipulation; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
     }
     .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-dark); }
-    .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.05); }
-    .btn-primary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35); }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(37, 99, 235, 0.06); }
+    .btn-primary { background: var(--gradient-primary); color: white; box-shadow: 0 4px 16px rgba(30, 58, 138, 0.4); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30, 58, 138, 0.5); }
     .btn-primary:active { transform: translateY(0); }
     .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: var(--radius-md); }
     .hero {
       padding: 140px 0 100px;
-      background: linear-gradient(180deg, #e0f2fe 0%, #ecfeff 40%, #ffffff 100%);
+      background: linear-gradient(180deg, #0c1929 0%, #1e3a8a 35%, #1e293b 100%);
       position: relative; overflow: hidden;
     }
     .hero::before {
-      content: ''; position: absolute; top: -50%; right: -10%;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+      content: ''; position: absolute; top: -30%; right: -5%;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, transparent 65%);
       border-radius: 50%; pointer-events: none;
     }
     .hero::after {
-      content: ''; position: absolute; bottom: -20%; left: -5%;
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+      content: ''; position: absolute; bottom: -30%; left: -5%;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(8, 145, 178, 0.25) 0%, transparent 65%);
       border-radius: 50%; pointer-events: none;
+    }
+    .hero-grid-bg {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
     }
     .hero-inner { position: relative; z-index: 1; text-align: center; max-width: 900px; margin: 0 auto; }
     .hero-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 16px; background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.2);
+      padding: 6px 16px; background: rgba(20, 184, 166, 0.12);
+      border: 1px solid rgba(20, 184, 166, 0.25);
       border-radius: var(--radius-full); font-size: 13px; font-weight: 600;
-      color: var(--primary); margin-bottom: 24px;
+      color: #5eead4; margin-bottom: 24px;
+      backdrop-filter: blur(10px);
     }
     .hero-badge span {
       display: inline-flex; align-items: center; justify-content: center;
@@ -127,32 +144,35 @@
     }
     .hero h1 {
       font-size: clamp(32px, 5vw, 56px); font-weight: 900; line-height: 1.15;
-      margin-bottom: 20px; color: var(--text-dark); letter-spacing: -0.02em;
+      margin-bottom: 20px; color: #ffffff; letter-spacing: -0.02em;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
     }
     .hero h1 .gradient-text {
-      background: var(--gradient-primary); -webkit-background-clip: text;
+      background: linear-gradient(135deg, #60a5fa 0%, #22d3ee 50%, #2dd4bf 100%);
+      -webkit-background-clip: text;
       -webkit-text-fill-color: transparent; background-clip: text;
     }
     .hero-subtitle {
-      font-size: clamp(16px, 2vw, 20px); color: var(--text-light);
+      font-size: clamp(15px, 2vw, 19px); color: rgba(226, 232, 240, 0.85);
       line-height: 1.7; margin-bottom: 36px; max-width: 680px; margin-left: auto; margin-right: auto;
     }
     .hero-cta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
     .hero-stats {
       display: flex; gap: 48px; justify-content: center; flex-wrap: wrap;
-      padding-top: 40px; border-top: 1px solid rgba(186, 230, 253, 0.8);
+      padding-top: 40px; border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
     .stat-item { text-align: center; }
     .stat-number {
-      font-size: 32px; font-weight: 800; background: var(--gradient-primary);
+      font-size: 32px; font-weight: 800;
+      background: linear-gradient(135deg, #93c5fd 0%, #22d3ee 50%, #2dd4bf 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2;
     }
-    .stat-label { font-size: 14px; color: var(--text-light); margin-top: 4px; }
+    .stat-label { font-size: 14px; color: rgba(203, 213, 225, 0.8); margin-top: 4px; }
     .section { padding: 100px 0; }
     .section-header { text-align: center; max-width: 700px; margin: 0 auto 60px; }
     .section-tag {
-      display: inline-block; padding: 6px 16px; background: rgba(6, 182, 212, 0.1);
-      color: var(--secondary); border-radius: var(--radius-full);
+      display: inline-block; padding: 6px 16px; background: rgba(30, 58, 138, 0.08);
+      color: var(--primary-deep); border-radius: var(--radius-full);
       font-size: 13px; font-weight: 600; margin-bottom: 16px; letter-spacing: 0.5px;
     }
     .section-title {
@@ -164,7 +184,7 @@
     .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
     .feature-card {
       background: white; border-radius: var(--radius-lg); padding: 32px;
-      border: 1px solid var(--border); transition: all 0.3s ease;
+      border: 1px solid var(--border-light); transition: all 0.3s ease;
       position: relative; overflow: hidden;
     }
     .feature-card::before {
@@ -178,15 +198,146 @@
       width: 56px; height: 56px; border-radius: var(--radius-md);
       display: flex; align-items: center; justify-content: center;
       font-size: 28px; margin-bottom: 20px;
-      background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(6,182,212,0.1));
+      background: linear-gradient(135deg, rgba(30,58,138,0.08), rgba(8,145,178,0.08));
     }
-    .feature-card:nth-child(2) .feature-icon { background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(59,130,246,0.1)); }
-    .feature-card:nth-child(3) .feature-icon { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(34,197,94,0.1)); }
-    .feature-card:nth-child(4) .feature-icon { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(249,115,22,0.1)); }
-    .feature-card:nth-child(5) .feature-icon { background: linear-gradient(135deg, rgba(236,72,153,0.1), rgba(244,114,182,0.1)); }
-    .feature-card:nth-child(6) .feature-icon { background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(45,212,191,0.1)); }
+    .feature-card:nth-child(2) .feature-icon { background: linear-gradient(135deg, rgba(8,145,178,0.08), rgba(20,184,166,0.08)); }
+    .feature-card:nth-child(3) .feature-icon { background: linear-gradient(135deg, rgba(20,184,166,0.08), rgba(5,150,105,0.08)); }
+    .feature-card:nth-child(4) .feature-icon { background: linear-gradient(135deg, rgba(217,119,6,0.08), rgba(249,115,22,0.08)); }
+    .feature-card:nth-child(5) .feature-icon { background: linear-gradient(135deg, rgba(220,38,38,0.06), rgba(217,119,6,0.08)); }
+    .feature-card:nth-child(6) .feature-icon { background: linear-gradient(135deg, rgba(30,58,138,0.08), rgba(20,184,166,0.08)); }
     .feature-card h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 10px; }
     .feature-card p { font-size: 14px; color: var(--text-light); line-height: 1.7; }
+
+    /* ===== 数据可视化展示区 ===== */
+    .data-showcase {
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #f1f5f9 100%);
+      padding: 80px 0 120px;
+      position: relative;
+    }
+    .data-showcase .section-header h2 { color: white; }
+    .data-showcase .section-header .section-desc { color: rgba(203, 213, 225, 0.75); }
+    .data-showcase .section-tag {
+      background: rgba(20, 184, 166, 0.15); color: #5eead4;
+      border: 1px solid rgba(20, 184, 166, 0.25);
+    }
+    .charts-grid {
+      display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 24px;
+      margin-top: 20px;
+    }
+    .chart-card {
+      background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(20px);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: var(--radius-lg); padding: 28px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .chart-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+    .chart-title {
+      font-size: 15px; font-weight: 600; color: #e2e8f0;
+      margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    .chart-subtitle {
+      font-size: 12px; color: rgba(148, 163, 184, 0.7); margin-bottom: 20px;
+    }
+
+    /* 柱状图 */
+    .bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 180px; padding-top: 10px; }
+    .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .bar {
+      width: 100%; max-width: 36px;
+      background: linear-gradient(180deg, #60a5fa 0%, #1e40af 100%);
+      border-radius: 4px 4px 2px 2px;
+      height: 0; transition: height 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .bar::after {
+      content: attr(data-value);
+      position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; font-weight: 700; color: #93c5fd;
+      opacity: 0; transition: opacity 0.3s ease 1.2s;
+    }
+    .chart-card.active .bar::after { opacity: 1; }
+    .bar-label { font-size: 11px; color: rgba(148, 163, 184, 0.7); }
+
+    /* 环形图 */
+    .ring-chart-container {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px 0;
+    }
+    .ring-chart {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: conic-gradient(#14b8a6 0deg, #0891b2 0deg, rgba(30,41,59,0.8) 0deg);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; transition: background 2s ease-out;
+    }
+    .ring-chart::before {
+      content: ''; position: absolute; inset: 18px;
+      background: rgba(15, 23, 42, 0.9); border-radius: 50%;
+    }
+    .ring-chart-inner {
+      position: relative; z-index: 1; text-align: center;
+    }
+    .ring-value {
+      font-size: 32px; font-weight: 800;
+      background: linear-gradient(135deg, #5eead4, #22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      line-height: 1;
+    }
+    .ring-label {
+      font-size: 11px; color: rgba(148, 163, 184, 0.7); margin-top: 4px;
+    }
+    .ring-legend {
+      display: flex; flex-direction: column; gap: 10px; margin-left: 20px;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1;
+    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    .ring-chart-wrapper {
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* 折线图 */
+    .line-chart-wrapper { position: relative; height: 180px; }
+    .line-chart-svg { width: 100%; height: 100%; }
+    .line-path {
+      fill: none; stroke: url(#lineGradient); stroke-width: 2.5;
+      stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 500; stroke-dashoffset: 500;
+      transition: stroke-dashoffset 2s ease-out;
+    }
+    .chart-card.active .line-path { stroke-dashoffset: 0; }
+    .line-area {
+      fill: url(#areaGradient); opacity: 0;
+      transition: opacity 1.5s ease 0.5s;
+    }
+    .chart-card.active .line-area { opacity: 0.3; }
+    .line-dot {
+      fill: #0f172a; stroke: #22d3ee; stroke-width: 2.5;
+      r: 4; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .chart-card.active .line-dot { opacity: 1; }
+    .chart-card.active .line-dot:nth-child(1) { transition-delay: 1.4s; }
+    .chart-card.active .line-dot:nth-child(2) { transition-delay: 1.6s; }
+    .chart-card.active .line-dot:nth-child(3) { transition-delay: 1.8s; }
+    .chart-card.active .line-dot:nth-child(4) { transition-delay: 2.0s; }
+    .chart-card.active .line-dot:nth-child(5) { transition-delay: 2.2s; }
+    .chart-card.active .line-dot:nth-child(6) { transition-delay: 2.4s; }
+    .line-x-labels {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: rgba(148, 163, 184, 0.6);
+      padding: 0 4px; margin-top: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr 1fr; }
+      .chart-card:first-child { grid-column: span 2; }
+    }
+    @media (max-width: 560px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card:first-child { grid-column: span 1; }
+      .data-showcase { padding: 60px 0 80px; }
+    }
+
     .roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
     .role-card {
       background: white; border-radius: var(--radius-xl);
@@ -210,9 +361,9 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 32px; margin-bottom: 16px;
     }
-    .role-card:nth-child(1) .role-icon { background: linear-gradient(135deg, #dbeafe, #bfdbfe); }
-    .role-card:nth-child(2) .role-icon { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
-    .role-card:nth-child(3) .role-icon { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+    .role-card:nth-child(1) .role-icon { background: linear-gradient(135deg, rgba(30,58,138,0.08), rgba(8,145,178,0.08)); }
+    .role-card:nth-child(2) .role-icon { background: linear-gradient(135deg, rgba(20,184,166,0.08), rgba(5,150,105,0.08)); }
+    .role-card:nth-child(3) .role-icon { background: linear-gradient(135deg, rgba(217,119,6,0.08), rgba(180,83,9,0.08)); }
     .role-name { font-size: 22px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; }
     .role-desc { font-size: 14px; color: var(--text-light); }
     .role-features { flex: 1; margin-bottom: 28px; }
@@ -527,6 +678,7 @@
   </nav>
 
   <section class="hero">
+    <div class="hero-grid-bg"></div>
     <div class="floating-particles" id="particles"></div>
     <div class="container hero-inner hero-animate">
       <div class="hero-badge">
@@ -554,6 +706,81 @@
         <div class="stat-item"><div class="stat-number">500+</div><div class="stat-label">合作学校</div></div>
         <div class="stat-item"><div class="stat-number">98%</div><div class="stat-label">提分有效率</div></div>
         <div class="stat-item"><div class="stat-number">24/7</div><div class="stat-label">AI全天辅导</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="data-showcase" id="data">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">&#128202; 数据洞察</span>
+        <h2 class="section-title">用数据驱动学习进步</h2>
+        <p class="section-desc">AI实时分析海量学习数据，精准诊断学情，为每一位学生定制最优学习路径。</p>
+      </div>
+      <div class="charts-grid">
+        <!-- 柱状图 -->
+        <div class="chart-card reveal" data-chart="bar">
+          <div class="chart-title">&#128202; 各学科提分幅度</div>
+          <div class="chart-subtitle">使用系统一学期平均成绩提升</div>
+          <div class="bar-chart">
+            <div class="bar-group"><div class="bar" data-value="18%" data-height="65"></div><div class="bar-label">数学</div></div>
+            <div class="bar-group"><div class="bar" data-value="15%" data-height="55"></div><div class="bar-label">物理</div></div>
+            <div class="bar-group"><div class="bar" data-value="12%" data-height="45"></div><div class="bar-label">化学</div></div>
+            <div class="bar-group"><div class="bar" data-value="22%" data-height="80"></div><div class="bar-label">英语</div></div>
+            <div class="bar-group"><div class="bar" data-value="14%" data-height="50"></div><div class="bar-label">语文</div></div>
+          </div>
+        </div>
+        <!-- 环形图 -->
+        <div class="chart-card reveal" data-chart="ring" data-percent="92">
+          <div class="chart-title">&#127919; 知识掌握率</div>
+          <div class="chart-subtitle">平均知识点掌握程度</div>
+          <div class="ring-chart-wrapper">
+            <div class="ring-chart" id="ringChart">
+              <div class="ring-chart-inner">
+                <div class="ring-value" id="ringValue">0%</div>
+                <div class="ring-label">掌握率</div>
+              </div>
+            </div>
+            <div class="ring-legend">
+              <div class="legend-item"><span class="legend-dot" style="background:#14b8a6;"></span>已掌握</div>
+              <div class="legend-item"><span class="legend-dot" style="background:#0891b2;"></span>学习中</div>
+              <div class="legend-item"><span class="legend-dot" style="background:rgba(148,163,184,0.3);"></span>未接触</div>
+            </div>
+          </div>
+        </div>
+        <!-- 折线图 -->
+        <div class="chart-card reveal" data-chart="line">
+          <div class="chart-title">&#128200; 学习趋势</div>
+          <div class="chart-subtitle">近6周答题正确率变化</div>
+          <div class="line-chart-wrapper">
+            <svg class="line-chart-svg" viewBox="0 0 300 160" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#14b8a6" />
+                  <stop offset="50%" stop-color="#0891b2" />
+                  <stop offset="100%" stop-color="#3b82f6" />
+                </linearGradient>
+                <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#0891b2" stop-opacity="0.4" />
+                  <stop offset="100%" stop-color="#0891b2" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <path class="line-area" d="M10,120 L60,95 L110,80 L160,60 L210,45 L260,28 L290,25 L290,150 L10,150 Z" />
+              <path class="line-path" d="M10,120 L60,95 L110,80 L160,60 L210,45 L260,28 L290,25" />
+              <circle class="line-dot" cx="10" cy="120" />
+              <circle class="line-dot" cx="60" cy="95" />
+              <circle class="line-dot" cx="110" cy="80" />
+              <circle class="line-dot" cx="160" cy="60" />
+              <circle class="line-dot" cx="210" cy="45" />
+              <circle class="line-dot" cx="260" cy="28" />
+              <circle class="line-dot" cx="290" cy="25" />
+            </svg>
+          </div>
+          <div class="line-x-labels">
+            <span>第1周</span><span>第2周</span><span>第3周</span>
+            <span>第4周</span><span>第5周</span><span>第6周</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -866,12 +1093,51 @@
         entries.forEach(function(entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add('active');
+            // 触发图表动画
+            if (entry.target.classList.contains('chart-card')) {
+              animateChart(entry.target);
+            }
             observer.unobserve(entry.target);
           }
         });
       }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
       reveals.forEach(function(el) { observer.observe(el); });
     })();
+
+    // ===== 图表动画 =====
+    function animateChart(card) {
+      var type = card.getAttribute('data-chart');
+      if (type === 'bar') {
+        var bars = card.querySelectorAll('.bar');
+        bars.forEach(function(bar, idx) {
+          var h = bar.getAttribute('data-height') || 50;
+          setTimeout(function() {
+            bar.style.height = h + '%';
+          }, idx * 150);
+        });
+      } else if (type === 'ring') {
+        var target = parseInt(card.getAttribute('data-percent') || 0);
+        var ring = card.querySelector('.ring-chart');
+        var valEl = card.querySelector('.ring-value');
+        var current = 0;
+        var duration = 2000;
+        var start = null;
+        function step(ts) {
+          if (!start) start = ts;
+          var progress = Math.min((ts - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          current = Math.floor(target * eased);
+          // 环形图用conic-gradient
+          var deg = current * 3.6; // percent to degrees
+          var secondColor = '#0891b2';
+          ring.style.background = 'conic-gradient(#14b8a6 ' + deg + 'deg, #0891b2 ' + deg + 'deg, rgba(30,41,59,0.8) ' + deg + 'deg)';
+          valEl.textContent = current + '%';
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        setTimeout(function() { requestAnimationFrame(step); }, 300);
+      }
+      // 折线图用CSS transition自动播放
+    }
 
     // ===== 数字递增动画 =====
     (function animateStats() {
