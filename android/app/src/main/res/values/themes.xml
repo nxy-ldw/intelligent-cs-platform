@@ -8,6 +8,5 @@
         <item name="android:statusBarColor">@android:color/white</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowBackground">@color/bg_light</item>
-        <item name="windowSplashScreenBackground">@color/bg_light</item>
     </style>
 </resources>

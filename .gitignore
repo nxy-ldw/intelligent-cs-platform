@@ -16,7 +16,7 @@ AI学习诊断-便携版.exe
 AI学习诊断-Windows桌面端.zip
 
 # 下载目录中的大文件
-# public/downloads/*.exe  - 暂不忽略，随项目一起部署
+# public/downloads/*.exe
 # public/downloads/*.apk
 # public/downloads/*.zip
 !public/downloads/.gitkeep

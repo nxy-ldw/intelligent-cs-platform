@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "AI学习诊断"
-include ':app'
+rootProject.name = "ai-learning-diagnostic"
+include(":app")

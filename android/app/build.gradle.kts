@@ -46,12 +46,8 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
-        compose = true
         viewBinding = true
         buildConfig = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
     }
     packaging {
         resources {
@@ -69,7 +65,7 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     // Splash Screen
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    // implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")

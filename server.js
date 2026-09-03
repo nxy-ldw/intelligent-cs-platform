@@ -32,8 +32,17 @@ app.get('/download', (req, res) => res.redirect('/downloads'));
 // 客户端下载路由
 app.get('/downloads/ai-learning-diagnostic-windows.exe', (req, res) => {
   const filePath = path.join(__dirname, 'public', 'downloads', 'ai-learning-diagnostic-windows.exe');
-  if (require('fs').existsSync(filePath)) {
+  if (fs.existsSync(filePath)) {
     res.download(filePath, 'AI学习诊断-Windows-便携版.exe');
+  } else {
+    res.status(404).send('文件暂未上线，请稍后再试');
+  }
+});
+
+app.get('/downloads/ai-learning-diagnostic-android.apk', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'downloads', 'ai-learning-diagnostic-android.apk');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'AI学习诊断-Android.apk');
   } else {
     res.status(404).send('文件暂未上线，请稍后再试');
   }

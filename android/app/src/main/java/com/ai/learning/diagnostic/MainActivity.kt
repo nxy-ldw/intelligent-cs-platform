@@ -21,8 +21,6 @@ class MainActivity : AppCompatActivity() {
     private var currentUrl: String = BuildConfig.BASE_URL
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 启动屏
-        val splashScreen = androidx.core.splashscreen.SplashScreen.installSplashScreen(this)
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
@@ -69,7 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         // 缓存策略
         settings.cacheMode = WebSettings.LOAD_DEFAULT
-        settings.setAppCacheEnabled(true)
 
         // 混合内容 (http + https)
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
@@ -157,7 +154,7 @@ class MainActivity : AppCompatActivity() {
                     // 添加相机选项
                     val captureIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
                     val chooserIntent = Intent.createChooser(intent, "选择图片")
-                    chocerIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(captureIntent))
+                    chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(captureIntent))
                     filePathCallback?.let { filePathCallbackRef ->
                         // 保存回调引用
                         this@MainActivity.filePathCallback = filePathCallbackRef
