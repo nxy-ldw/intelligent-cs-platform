@@ -397,6 +397,113 @@
       .role-card { padding: 24px; }
       .footer-bottom { gap: 12px; }
     }
+
+    /* ===== 动态效果 ===== */
+    /* 浮动粒子背景 */
+    .floating-particles {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden; z-index: 0;
+    }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: rgba(59, 130, 246, 0.3);
+      animation: floatParticle linear infinite;
+    }
+    .particle:nth-child(2n) { background: rgba(6, 182, 212, 0.25); }
+    .particle:nth-child(3n) { background: rgba(45, 212, 191, 0.2); }
+    @keyframes floatParticle {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+
+    /* 脉冲光晕 */
+    .pulse-glow {
+      position: relative;
+    }
+    .pulse-glow::after {
+      content: ''; position: absolute; inset: -4px;
+      border-radius: inherit; background: var(--gradient-primary);
+      filter: blur(12px); opacity: 0.5; z-index: -1;
+      animation: pulseGlow 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.05); }
+    }
+
+    /* 滚动入场动画 */
+    .reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1; transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+    .reveal-delay-6 { transition-delay: 0.6s; }
+
+    /* 打字机光标 */
+    .typing-cursor {
+      display: inline-block; width: 3px; height: 0.9em;
+      background: var(--primary); margin-left: 4px; vertical-align: middle;
+      animation: blinkCursor 1s step-end infinite;
+    }
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Hero淡入上移 */
+    .hero-animate .hero-badge { animation: fadeInUp 0.8s ease 0.2s both; }
+    .hero-animate h1 { animation: fadeInUp 0.8s ease 0.4s both; }
+    .hero-animate .hero-subtitle { animation: fadeInUp 0.8s ease 0.6s both; }
+    .hero-animate .hero-cta { animation: fadeInUp 0.8s ease 0.8s both; }
+    .hero-animate .hero-stats { animation: fadeInUp 0.8s ease 1s both; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logo旋转悬停 */
+    .logo-icon { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .logo:hover .logo-icon { transform: rotate(360deg) scale(1.1); }
+
+    /* 功能卡片3D悬停 */
+    .feature-card { transform-style: preserve-3d; perspective: 1000px; }
+    .feature-card:hover { transform: translateY(-8px) rotateX(2deg); }
+
+    /* 渐变文字流动 */
+    .gradient-text {
+      background-size: 200% 200%;
+      animation: gradientFlow 4s ease infinite;
+    }
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* 步骤卡片连接线 */
+    .steps-grid { position: relative; }
+    .steps-grid::before {
+      content: ''; position: absolute;
+      top: 48px; left: 12%; right: 12%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      z-index: 0;
+    }
+
+    /* 徽章弹跳 */
+    .hero-badge { animation: badgeBounce 2s ease-in-out infinite; }
+    @keyframes badgeBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
   </style>
 </head>
 <body>
@@ -420,7 +527,8 @@
   </nav>
 
   <section class="hero">
-    <div class="container hero-inner">
+    <div class="floating-particles" id="particles"></div>
+    <div class="container hero-inner hero-animate">
       <div class="hero-badge">
         <span>&#10022;</span>
         AI驱动 &middot; 精准诊断 &middot; 个性化辅导
@@ -452,38 +560,38 @@
 
   <section class="section features" id="features">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header reveal">
         <span class="section-tag">核心功能</span>
         <h2 class="section-title">六大核心能力，赋能智慧学习</h2>
         <p class="section-desc">从诊断到辅导，从练习到追踪，全方位覆盖学习全流程，让AI成为你最贴心的学习伙伴。</p>
       </div>
       <div class="features-grid">
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-1">
           <div class="feature-icon">&#128269;</div>
           <h3>AI学情诊断</h3>
           <p>通过智能算法深度分析学生答题数据，精准定位知识薄弱点，生成详细的学情诊断报告。</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon">&#127919;</div>
           <h3>错因归因分析</h3>
           <p>智能识别每道错题的错误根源，区分概念模糊、计算失误、审题不清等不同类型错因。</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon">&#128161;</div>
           <h3>AI错题讲解</h3>
           <p>针对每道错题提供详细的分步解析和解题思路，AI老师一对一讲解，直到完全理解。</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-4">
           <div class="feature-icon">&#128218;</div>
           <h3>自适应习题推送</h3>
           <p>根据学生掌握程度智能推荐难度匹配的习题，循序渐进，避免无效刷题，提升学习效率。</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-5">
           <div class="feature-icon">&#128506;&#65039;</div>
           <h3>智能学习路径</h3>
           <p>为每位学生定制专属学习计划，规划最优学习路径，系统性弥补知识漏洞，稳步提升成绩。</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card reveal reveal-delay-6">
           <div class="feature-icon">&#128202;</div>
           <h3>班级学情看板</h3>
           <p>多维度班级数据分析，实时掌握全班学情动态，帮助教师精准教学，提升班级整体水平。</p>
@@ -493,13 +601,13 @@
   </section>
   <section class="section" id="roles">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header reveal">
         <span class="section-tag">角色说明</span>
         <h2 class="section-title">三种角色，各司其职</h2>
         <p class="section-desc">为学生、教师和管理员分别打造专属功能模块，满足不同角色的使用需求，构建完整的智慧教学生态。</p>
       </div>
       <div class="roles-grid">
-        <div class="role-card featured">
+        <div class="role-card featured reveal reveal-delay-1">
           <div class="role-header">
             <div class="role-icon">&#127891;</div>
             <h3 class="role-name">学生端</h3>
@@ -518,7 +626,7 @@
             <button class="btn btn-primary" onclick="openModal('register'); setDefaultRole('student')">注册</button>
           </div>
         </div>
-        <div class="role-card">
+        <div class="role-card reveal reveal-delay-2">
           <div class="role-header">
             <div class="role-icon">&#128104;&zwj;&#127979;</div>
             <h3 class="role-name">教师端</h3>
@@ -537,7 +645,7 @@
             <button class="btn btn-primary" onclick="openModal('register'); setDefaultRole('teacher')">注册</button>
           </div>
         </div>
-        <div class="role-card">
+        <div class="role-card reveal reveal-delay-3">
           <div class="role-header">
             <div class="role-icon">&#9881;&#65039;</div>
             <h3 class="role-name">管理员</h3>
@@ -560,31 +668,31 @@
   </section>
   <section class="section how-it-works" id="how">
     <div class="container">
-      <div class="section-header">
+      <div class="section-header reveal">
         <span class="section-tag">工作原理</span>
         <h2 class="section-title">四步流程，AI助力高效学习</h2>
         <p class="section-desc">从数据采集到效果追踪，完整的AI学习闭环，让每一步学习都有数据支撑，每一次提升都有据可依。</p>
       </div>
       <div class="steps-grid">
-        <div class="step-card">
+        <div class="step-card reveal reveal-delay-1">
           <div class="step-number">1</div>
           <div class="step-icon">&#128229;</div>
           <h3>数据采集</h3>
           <p>全面收集学生答题、作业、考试等多维度学习数据，建立完整学情档案。</p>
         </div>
-        <div class="step-card">
+        <div class="step-card reveal reveal-delay-2">
           <div class="step-number">2</div>
           <div class="step-icon">&#129504;</div>
           <h3>AI诊断</h3>
           <p>AI算法深度分析数据，精准诊断知识掌握程度，定位薄弱环节与错因。</p>
         </div>
-        <div class="step-card">
+        <div class="step-card reveal reveal-delay-3">
           <div class="step-number">3</div>
           <div class="step-icon">&#127919;</div>
           <h3>个性化辅导</h3>
           <p>基于诊断结果定制专属学习路径，推送针对性习题与AI讲解视频。</p>
         </div>
-        <div class="step-card">
+        <div class="step-card reveal reveal-delay-4">
           <div class="step-number">4</div>
           <div class="step-icon">&#128200;</div>
           <h3>效果追踪</h3>
@@ -728,6 +836,90 @@
     </div>
   </div>
   <script>
+    // ===== 浮动粒子效果 =====
+    (function createParticles() {
+      var container = document.getElementById('particles');
+      if (!container) return;
+      var count = 20;
+      for (var i = 0; i < count; i++) {
+        var p = document.createElement('div');
+        p.className = 'particle';
+        var size = Math.random() * 8 + 4;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        p.style.opacity = Math.random() * 0.5 + 0.2;
+        container.appendChild(p);
+      }
+    })();
+
+    // ===== 滚动入场动画 =====
+    (function initReveal() {
+      var reveals = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) {
+        reveals.forEach(function(el) { el.classList.add('active'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+      reveals.forEach(function(el) { observer.observe(el); });
+    })();
+
+    // ===== 数字递增动画 =====
+    (function animateStats() {
+      var stats = document.querySelectorAll('.stat-number');
+      if (!stats.length) return;
+      var targets = [];
+      stats.forEach(function(el) {
+        var text = el.textContent.trim();
+        targets.push(text);
+        el.setAttribute('data-target', text);
+        el.textContent = '0';
+      });
+
+      function animateNumber(el, targetText) {
+        var numMatch = targetText.match(/[\d,]+/);
+        if (!numMatch) { el.textContent = targetText; return; }
+        var target = parseFloat(numMatch[0].replace(/,/g, ''));
+        var suffix = targetText.replace(numMatch[0], '');
+        var duration = 1800;
+        var start = null;
+        function step(ts) {
+          if (!start) start = ts;
+          var progress = Math.min((ts - start) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          var current = Math.floor(target * eased);
+          el.textContent = current.toLocaleString() + suffix;
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = targetText;
+        }
+        requestAnimationFrame(step);
+      }
+
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              var idx = Array.from(stats).indexOf(entry.target);
+              animateNumber(entry.target, targets[idx]);
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        stats.forEach(function(el) { observer.observe(el); });
+      } else {
+        stats.forEach(function(el, i) { animateNumber(el, targets[i]); });
+      }
+    })();
+
     var navbar = document.getElementById('navbar');
     window.addEventListener('scroll', function() {
       if (window.scrollY > 10) { navbar.classList.add('scrolled'); }

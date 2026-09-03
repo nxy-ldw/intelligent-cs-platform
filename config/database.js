@@ -879,7 +879,7 @@ function ensureSystemConfig() {
         api_url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
         api_key: '3a32f298717b4e5986715f0e6fc37f49.h5gxPGjLlV0J4Ezc', model: 'glm-4-flash',
         is_free: 1, is_active: 1, is_default: 1,
-        max_tokens: 2048, temperature: 0.7,
+        max_tokens: 8192, temperature: 0.7,
         created_at: nowStr()
       },
       {

@@ -93,9 +93,11 @@ router.post('/students/batch-add', roleMiddleware('teacher'), (req, res) => {
 });
 
 router.get('/questions', roleMiddleware('teacher', 'admin'), (req, res) => {
-  const { kpId, difficulty, keyword } = req.query;
+  const { kpId, difficulty, keyword, subject, course } = req.query;
   let sql = "SELECT * FROM questions WHERE 1=1";
   const params = [];
+  if (subject) { sql += " AND subject = ?"; params.push(subject); }
+  if (course) { sql += " AND course = ?"; params.push(course); }
   if (kpId) { sql += " AND kp_id = ?"; params.push(kpId); }
   if (difficulty) { sql += " AND difficulty = ?"; params.push(difficulty); }
   if (keyword) { sql += " AND question LIKE ?"; params.push('%' + keyword + '%'); }
@@ -253,6 +255,32 @@ router.post('/ai-generate', roleMiddleware('teacher', 'admin'), async (req, res)
   try {
     var result = await aiGen.generateQuestions(req.body);
     res.json({ success: true, added: result.added, questions: result.questions, api_used: result.api_used });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 拍照OCR识别录入题目
+router.post('/ocr-import', roleMiddleware('teacher', 'admin'), async (req, res) => {
+  var aiGen = require('../services/aiGenerate');
+  try {
+    var image = req.body.image;
+    if (!image) return res.status(400).json({ error: '请上传图片' });
+    // 支持base64和data URL格式
+    if (image.startsWith('data:image')) {
+      // 保持data URL格式，智谱API支持
+    } else if (!image.startsWith('http')) {
+      image = 'data:image/jpeg;base64,' + image;
+    }
+    var options = {
+      subject: req.body.subject || '数学',
+      gradeLevel: req.body.gradeLevel || '',
+      textbookVersion: req.body.textbookVersion || '',
+      course: req.body.course || '',
+      knowledgePoint: req.body.knowledgePoint || ''
+    };
+    var result = await aiGen.ocrAndImport(image, options);
+    res.json({ success: true, added: result.added, questions: result.questions, api_used: result.api_used, raw_count: result.raw_count });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }

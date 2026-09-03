@@ -781,9 +781,23 @@
             <h1 class="page-title">题库管理</h1>
             <p class="page-subtitle">管理练习题目</p>
           </div>
-          <button class="btn btn-primary" onclick="showQuestionModal()">+ 添加题目</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="openOcrModal()">&#128247; 拍照录题</button>
+            <button class="btn btn-primary" onclick="showQuestionModal()">+ 添加题目</button>
+          </div>
         </div>
         <div class="filter-bar">
+          <select class="form-control" id="qSubjectFilter" style="min-width:120px;" onchange="loadQCourseFilter(); loadQuestions()">
+            <option value="">全部科目</option>
+            <option value="数学">数学</option>
+            <option value="物理">物理</option>
+            <option value="化学">化学</option>
+            <option value="语文">语文</option>
+            <option value="英语">英语</option>
+          </select>
+          <select class="form-control" id="qCourseFilter" style="min-width:160px;" onchange="loadQuestions()">
+            <option value="">全部课程</option>
+          </select>
           <select class="form-control" id="qKpFilter" style="min-width:180px;" onchange="loadQuestions()">
             <option value="">全部知识点</option>
           </select>
@@ -1070,6 +1084,55 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('questionModal')">取消</button>
         <button class="btn btn-primary" onclick="saveQuestion()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ocrModal">
+    <div class="modal wide">
+      <div class="modal-header">
+        <h2 class="modal-title">&#128247; 拍照录题</h2>
+        <button class="modal-close" onclick="closeModal('ocrModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:16px;padding:12px;background:rgba(59,130,246,0.06);border-radius:8px;font-size:13px;color:var(--text-medium);">
+          &#128161; 拍摄或上传试卷/练习册照片，AI自动识别题目并录入题库。支持清晰的打印体文字，建议拍摄时光线充足、画面平整。
+        </div>
+        <div class="form-group">
+          <label class="form-label">科目</label>
+          <select class="form-control" id="ocrSubject">
+            <option value="数学">数学</option>
+            <option value="物理">物理</option>
+            <option value="化学">化学</option>
+            <option value="语文">语文</option>
+            <option value="英语">英语</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">上传图片</label>
+          <div id="ocrUploadArea" style="border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all 0.3s;" ondragover="this.style.borderColor='var(--primary)';this.style.background='rgba(59,130,246,0.05)';" ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent';" ondrop="handleOcrDrop(event)" onclick="document.getElementById('ocrFileInput').click()">
+            <div style="font-size:48px;margin-bottom:12px;">&#128247;</div>
+            <div style="font-size:15px;color:var(--text-dark);margin-bottom:6px;font-weight:600;">点击上传或拖拽图片到此处</div>
+            <div style="font-size:13px;color:var(--text-light);">支持 JPG、PNG 格式，建议小于5MB</div>
+            <input type="file" id="ocrFileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleOcrFileSelect(event)">
+          </div>
+        </div>
+        <div id="ocrPreviewArea" style="display:none;margin-bottom:16px;">
+          <div style="position:relative;display:inline-block;width:100%;">
+            <img id="ocrPreviewImg" style="width:100%;max-height:300px;object-fit:contain;border-radius:8px;border:1px solid var(--border);">
+            <button onclick="clearOcrImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;">&times;</button>
+          </div>
+        </div>
+        <div id="ocrResultArea" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">识别结果</label>
+            <div id="ocrResultList" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:12px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('ocrModal')">关闭</button>
+        <button class="btn btn-primary" id="ocrSubmitBtn" onclick="submitOcr()" disabled>&#128269; 开始识别</button>
       </div>
     </div>
   </div>
@@ -1499,14 +1562,36 @@
           modalSelect.innerHTML += '<option value="' + kp.id + '">' + escapeHtml(kp.name) + '</option>';
         });
       } catch (err) { console.error('\u52a0\u8f7d\u77e5\u8bc6\u70b9\u5931\u8d25', err); }
+      loadQCourseFilter();
+    }
+
+    async function loadQCourseFilter() {
+      var select = document.getElementById('qCourseFilter');
+      if (!select) return;
+      var subject = document.getElementById('qSubjectFilter').value;
+      select.innerHTML = '<option value="">\u5168\u90e8\u8bfe\u7a0b</option>';
+      if (!subject) return;
+      try {
+        var data = await apiCall('/api/teacher/courses?subject=' + encodeURIComponent(subject));
+        var courses = data.courses || [];
+        courses.forEach(function(c) {
+          var val = typeof c === 'string' ? c : (c.value || c.id || c.name);
+          var label = typeof c === 'string' ? c : (c.label || c.name || c.title || c.value);
+          select.innerHTML += '<option value="' + escapeHtml(val) + '">' + escapeHtml(label) + '</option>';
+        });
+      } catch (err) { console.error('load course filter failed', err); }
     }
 
     async function loadQuestions() {
+      var subject = document.getElementById('qSubjectFilter').value;
+      var course = document.getElementById('qCourseFilter').value;
       var kpId = document.getElementById('qKpFilter').value;
       var difficulty = document.getElementById('qDiffFilter').value;
       var keyword = document.getElementById('qKeyword').value.trim();
       var body = document.getElementById('questionsBody');
       var url = '/api/teacher/questions?';
+      if (subject) url += 'subject=' + encodeURIComponent(subject) + '&';
+      if (course) url += 'course=' + encodeURIComponent(course) + '&';
       if (kpId) url += 'kpId=' + encodeURIComponent(kpId) + '&';
       if (difficulty) url += 'difficulty=' + encodeURIComponent(difficulty) + '&';
       if (keyword) url += 'keyword=' + encodeURIComponent(keyword) + '&';
@@ -1616,6 +1701,105 @@
         closeModal('questionModal');
         loadQuestions();
       } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    // ===== OCR 拍照录题 =====
+    var ocrImageBase64 = null;
+
+    function openOcrModal() {
+      ocrImageBase64 = null;
+      document.getElementById('ocrPreviewArea').style.display = 'none';
+      document.getElementById('ocrResultArea').style.display = 'none';
+      document.getElementById('ocrSubmitBtn').disabled = true;
+      document.getElementById('ocrFileInput').value = '';
+      openModal('ocrModal');
+    }
+
+    function handleOcrFileSelect(e) {
+      var file = e.target.files && e.target.files[0];
+      if (file) processOcrFile(file);
+    }
+
+    function handleOcrDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var uploadArea = document.getElementById('ocrUploadArea');
+      uploadArea.style.borderColor = 'var(--border)';
+      uploadArea.style.background = 'transparent';
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) processOcrFile(file);
+    }
+
+    function processOcrFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('请选择图片文件', 'error');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('图片大小不能超过5MB', 'error');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        ocrImageBase64 = e.target.result;
+        document.getElementById('ocrPreviewImg').src = ocrImageBase64;
+        document.getElementById('ocrPreviewArea').style.display = 'block';
+        document.getElementById('ocrResultArea').style.display = 'none';
+        document.getElementById('ocrSubmitBtn').disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearOcrImage() {
+      ocrImageBase64 = null;
+      document.getElementById('ocrPreviewArea').style.display = 'none';
+      document.getElementById('ocrResultArea').style.display = 'none';
+      document.getElementById('ocrSubmitBtn').disabled = true;
+      document.getElementById('ocrFileInput').value = '';
+    }
+
+    async function submitOcr() {
+      if (!ocrImageBase64) {
+        showToast('请先选择图片', 'warning');
+        return;
+      }
+      var btn = document.getElementById('ocrSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '识别中...';
+      try {
+        var payload = {
+          image: ocrImageBase64,
+          subject: document.getElementById('ocrSubject').value
+        };
+        var data = await apiCall('/api/teacher/ocr-import', 'POST', payload);
+        var questions = data.questions || [];
+        var resultList = document.getElementById('ocrResultList');
+        var html = '';
+        if (questions.length > 0) {
+          html += '<div style="margin-bottom:12px;padding:10px;background:rgba(16,185,129,0.1);border-radius:8px;font-size:13px;color:var(--success);">';
+          html += '成功识别 ' + questions.length + ' 道题目，已自动录入题库';
+          if (data.api_used) html += '（' + escapeHtml(data.api_used) + '）';
+          html += '</div>';
+          questions.forEach(function(q, idx) {
+            html += '<div style="padding:12px 0;border-bottom:1px solid var(--border);">';
+            html += '<div style="font-weight:600;color:var(--text-dark);margin-bottom:4px;">第 ' + (idx + 1) + '题 ' + (q.type ? '(' + q.type + ')' : '') + '</div>';
+            html += '<div style="font-size:13px;color:var(--text-medium);line-height:1.6;">' + escapeHtml(q.question) + '</div>';
+            if (q.answer) html += '<div style="font-size:12px;color:var(--success);margin-top:4px;">答案：' + escapeHtml(q.answer) + '</div>';
+            html += '</div>';
+          });
+        } else {
+          html = '<div style="text-align:center;padding:20px;color:var(--text-light);font-size:13px;">未能识别出题目，请尝试更清晰的图片</div>';
+        }
+        resultList.innerHTML = html;
+        document.getElementById('ocrResultArea').style.display = 'block';
+        showToast('识别完成，录入 ' + questions.length + ' 道题', 'success');
+        loadQuestions();
+      } catch (err) {
+        showToast('识别失败: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '&#128269; 开始识别';
+      }
     }
 
     // ===== Knowledge Point Management =====
@@ -1999,8 +2183,10 @@
               }
             }
             html += '<div style="font-size:12px;color:var(--text-light);margin-top:8px;">正确答案：<strong style="color:var(--success);">' + escapeHtml(q.answer || '') + '</strong></div>';
-            if (q.explanation) {
-              html += '<div style="font-size:12px;color:var(--text-light);margin-top:4px;">解析：' + escapeHtml(q.explanation) + '</div>';
+            var analysisText = q.analysis || q.explanation || q.parse || '';
+            if (analysisText) {
+              var formattedAnalysis = escapeHtml(analysisText).replace(/\n/g, '<br>');
+              html += '<div style="font-size:12px;color:var(--text-medium);margin-top:8px;padding:10px;background:var(--bg-light);border-radius:6px;line-height:1.6;"><strong style="color:var(--primary);">📖 解析：</strong><br>' + formattedAnalysis + '</div>';
             }
             html += '</div>';
           });
