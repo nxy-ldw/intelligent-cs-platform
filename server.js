@@ -25,6 +25,20 @@ app.use('/api/teacher', require('./routes/teacher'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/chat', require('./routes/chat'));
 
+// 下载页面路由
+app.get('/downloads', (req, res) => res.sendFile(path.join(__dirname, 'public', 'downloads.html')));
+app.get('/download', (req, res) => res.redirect('/downloads'));
+
+// 客户端下载路由
+app.get('/downloads/ai-learning-diagnostic-windows.exe', (req, res) => {
+  const filePath = path.join(__dirname, 'public', 'downloads', 'ai-learning-diagnostic-windows.exe');
+  if (require('fs').existsSync(filePath)) {
+    res.download(filePath, 'AI学习诊断-Windows-便携版.exe');
+  } else {
+    res.status(404).send('文件暂未上线，请稍后再试');
+  }
+});
+
 app.get('/student', (req, res) => res.sendFile(path.join(__dirname, 'public', 'student', 'index.html')));
 app.get('/teacher', (req, res) => res.sendFile(path.join(__dirname, 'public', 'teacher', 'index.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));
