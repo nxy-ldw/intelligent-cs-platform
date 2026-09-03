@@ -4,3 +4,21 @@ data/
 .DS_Store
 Thumbs.db
 *.log
+
+# Electron构建输出
+desktop/node_modules/
+desktop/dist/
+dist/
+
+# 客户端发布文件
+AI学习诊断-Windows桌面端/
+AI学习诊断-便携版.exe
+AI学习诊断-Windows桌面端.zip
+
+# Android构建输出
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
