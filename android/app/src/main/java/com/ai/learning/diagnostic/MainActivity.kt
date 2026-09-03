@@ -11,56 +11,28 @@ import android.webkit.*
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
-    private lateinit var swipeRefresh: SwipeRefreshLayout
     private var currentUrl: String = BuildConfig.BASE_URL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_main)
 
-        setupViews()
-        setupWebView()
-
-        // 加载主页
-        webView.loadUrl(currentUrl)
-    }
-
-    private fun setupViews() {
         webView = findViewById(R.id.webView)
         progressBar = findViewById(R.id.progressBar)
-        swipeRefresh = findViewById(R.id.swipeRefresh)
 
-        // 下拉刷新 — 仅当页面滚动到顶部时才触发
-        swipeRefresh.setOnRefreshListener {
-            webView.reload()
-        }
-
-        // 关键修复：只有当 WebView 内容在顶部时才允许下拉刷新
-        // 否则正常向下滑动会被 SwipeRefreshLayout 拦截导致无法滚动
-        swipeRefresh.setOnChildScrollUpCallback { _, _ ->
-            webView.scrollY > 0
-        }
-
-        // 下拉刷新颜色
-        swipeRefresh.setColorSchemeResources(
-            R.color.primary,
-            R.color.secondary,
-            R.color.accent
-        )
+        setupWebView()
+        webView.loadUrl(currentUrl)
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         val settings = webView.settings
 
-        // 基本设置
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.databaseEnabled = true
@@ -72,22 +44,14 @@ class MainActivity : AppCompatActivity() {
         settings.textZoom = 100
 
         // 自定义 User-Agent，让服务端识别 App 环境
-        settings.userAgentString = settings.userAgentString + " AILearningApp/1.0 Android"
+        settings.userAgentString = settings.userAgentString + " AILearningApp/1.0.1 Android"
 
-        // 缓存策略
         settings.cacheMode = WebSettings.LOAD_DEFAULT
-
-        // 混合内容 (http + https)
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-
-        // 媒体自动播放
         settings.mediaPlaybackRequiresUserGesture = false
-
-        // 文件访问
         settings.allowFileAccess = true
         settings.allowContentAccess = true
 
-        // WebView客户端
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 progressBar.visibility = View.VISIBLE
@@ -95,57 +59,25 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 progressBar.visibility = View.GONE
-                swipeRefresh.isRefreshing = false
                 url?.let { currentUrl = it }
-                // 注入 JS：隐藏下载相关元素，适配 App 端布局
-                view?.evaluateJavascript("""
-                    (function() {
-                        document.documentElement.setAttribute('data-app', 'android');
-                        // 隐藏导航栏中的下载入口
-                        document.querySelectorAll('a[href*="downloads"], a[href*="download"]').forEach(function(el) {
-                            var parent = el.parentElement;
-                            if (parent && parent.classList.contains('nav-links')) el.style.display = 'none';
-                        });
-                        // 隐藏导航栏下载按钮
-                        document.querySelectorAll('.nav-buttons .btn-outline').forEach(function(btn) {
-                            if (btn.textContent.includes('下载') || btn.onclick && btn.onclick.toString().includes('downloads')) {
-                                btn.style.display = 'none';
-                            }
-                        });
-                        // 隐藏首页下载相关区块
-                        document.querySelectorAll('.download-section, .cta-section').forEach(function(el) {
-                            var text = el.textContent || '';
-                            if (text.includes('下载') || text.includes('客户端')) {
-                                el.style.display = 'none';
-                            }
-                        });
-                        // 如果在下载页面，重定向到首页
-                        if (location.pathname.includes('downloads')) {
-                            location.href = '/';
-                        }
-                    })();
-                """.trimIndent(), null)
+                view?.evaluateJavascript(PULL_TO_REFRESH_JS + APP_LAYOUT_JS, null)
             }
 
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url ?: return false
                 return when {
-                    // 站内链接 - WebView 内打开
                     url.host == Uri.parse(BuildConfig.BASE_URL).host -> {
                         view?.loadUrl(url.toString())
                         true
                     }
-                    // http/https 外链 - 系统浏览器打开
                     url.scheme == "http" || url.scheme == "https" -> {
                         startActivity(Intent(Intent.ACTION_VIEW, url))
                         true
                     }
-                    // tel: 拨号
                     url.scheme == "tel" -> {
                         startActivity(Intent(Intent.ACTION_DIAL, url))
                         true
                     }
-                    // mailto: 邮件
                     url.scheme == "mailto" -> {
                         startActivity(Intent(Intent.ACTION_SENDTO, url))
                         true
@@ -165,7 +97,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Chrome客户端 - 进度条
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 progressBar.progress = newProgress
@@ -176,11 +107,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onReceivedTitle(view: WebView?, title: String?) {
-                // 可以设置标题
-            }
-
-            // 文件选择支持（拍照上传）
             override fun onShowFileChooser(
                 webView: WebView?,
                 filePathCallback: ValueCallback<Array<Uri>>?,
@@ -188,13 +114,11 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 fileChooserParams?.let { params ->
                     val intent = params.createIntent()
-                    // 添加相机选项
                     val captureIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
                     val chooserIntent = Intent.createChooser(intent, "选择图片")
                     chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(captureIntent))
-                    filePathCallback?.let { filePathCallbackRef ->
-                        // 保存回调引用
-                        this@MainActivity.filePathCallback = filePathCallbackRef
+                    filePathCallback?.let { ref ->
+                        this@MainActivity.filePathCallback = ref
                         startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST_CODE)
                     }
                 }
@@ -202,7 +126,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // JS 接口
         webView.addJavascriptInterface(WebAppInterface(this), "AndroidApp")
     }
 
@@ -240,19 +163,10 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        if (webView.canGoBack()) {
-            webView.goBack()
-            return true
-        }
-        return super.onSupportNavigateUp()
-    }
-
     override fun onBackPressed() {
         if (webView.canGoBack()) {
             webView.goBack()
         } else {
-            // 退出确认
             AlertDialog.Builder(this)
                 .setTitle("退出应用")
                 .setMessage("确定要退出AI学习诊断吗？")
@@ -283,5 +197,82 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val FILE_CHOOSER_REQUEST_CODE = 1001
+
+        // JS：纯前端下拉刷新——仅在 window.scrollY===0 时生效，不影响正常滚动
+        private val PULL_TO_REFRESH_JS = """
+(function(){
+  if(window.__ptrInstalled) return;
+  window.__ptrInstalled = true;
+  var pulling=false, startY=0, currentY=0;
+  var indicator=document.createElement('div');
+  indicator.id='__ptr_indicator';
+  indicator.style.cssText='position:fixed;top:0;left:0;right:0;height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600;z-index:99999;transition:height 0.25s ease;pointer-events:none;';
+  var spinner=document.createElement('div');
+  spinner.style.cssText='width:22px;height:22px;border:2.5px solid #cbd5e1;border-top-color:#2563eb;border-radius:50%;animation:__ptrSpin 0.7s linear infinite;margin-right:8px;';
+  var style=document.createElement('style');
+  style.textContent='@keyframes __ptrSpin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(style);
+  var text=document.createElement('span');
+  text.textContent='下拉刷新';
+  indicator.appendChild(spinner);
+  indicator.appendChild(text);
+  function showIndicator(h){indicator.style.height=h+'px';}
+  document.addEventListener('touchstart',function(e){
+    if(window.scrollY<=0&&e.touches.length===1){
+      pulling=true;
+      startY=e.touches[0].clientY;
+      currentY=startY;
+      if(!indicator.parentElement) document.body.appendChild(indicator);
+      spinner.style.animation='none';
+    }
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!pulling) return;
+    currentY=e.touches[0].clientY;
+    var diff=currentY-startY;
+    if(diff>0){
+      var h=Math.min(diff*0.5,80);
+      showIndicator(h);
+      if(h>60){text.textContent='松开刷新';}
+      else{text.textContent='下拉刷新';}
+    }
+  },{passive:true});
+  document.addEventListener('touchend',function(){
+    if(!pulling) return;
+    pulling=false;
+    var diff=currentY-startY;
+    if(diff>60){
+      showIndicator(50);
+      spinner.style.animation='__ptrSpin 0.7s linear infinite';
+      text.textContent='刷新中…';
+      setTimeout(function(){
+        indicator.style.height='0';
+        setTimeout(function(){ if(indicator.parentElement) indicator.parentElement.removeChild(indicator); },300);
+        location.reload();
+      },400);
+    } else {
+      indicator.style.height='0';
+      setTimeout(function(){ if(indicator.parentElement) indicator.parentElement.removeChild(indicator); },300);
+    }
+  },{passive:true});
+})();
+        """.trimIndent()
+
+        // JS：隐藏下载相关元素，适配 App 端布局
+        private val APP_LAYOUT_JS = """
+(function(){
+  document.documentElement.setAttribute('data-app','android');
+  document.querySelectorAll('a[href*="downloads"],a[href*="download"]').forEach(function(el){
+    var p=el.parentElement;
+    if(p&&p.classList.contains('nav-links')) el.style.display='none';
+  });
+  document.querySelectorAll('.nav-buttons .btn-outline').forEach(function(btn){
+    if(btn.textContent.includes('下载')||(btn.getAttribute('onclick')||'').includes('downloads')) btn.style.display='none';
+  });
+  document.querySelectorAll('.hero-cta a[href*="downloads"]').forEach(function(el){el.style.display='none';});
+  document.querySelectorAll('.footer-col a[href*="downloads"]').forEach(function(el){el.style.display='none';});
+  if(location.pathname.includes('downloads')){location.href='/';}
+})();
+        """.trimIndent()
     }
 }
