@@ -1,25 +1,20 @@
 {
   "name": "ai-learning-diagnostic",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI个性化学习诊断辅导系统 - 桌面端",
   "main": "main.js",
   "author": "AI Learning Platform",
   "license": "Proprietary",
   "scripts": {
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
     "build:win64": "electron-builder --win --x64",
-    "build:win32": "electron-builder --win --ia32",
     "dist": "electron-builder --win --x64 --publish never"
   },
   "devDependencies": {
     "electron": "^28.0.0",
-    "electron-builder": "^24.9.1",
-    "electron-packager": "^17.1.2"
-  },
-  "dependencies": {
-    "electron-store": "^8.1.0"
+    "electron-builder": "^24.9.1"
   },
   "build": {
     "appId": "com.ai.learning.diagnostic",
@@ -29,40 +24,20 @@
     },
     "files": [
       "main.js",
-      "preload.js",
       "package.json",
-      "node_modules/**/*",
-      "assets/**/*"
+      "assets/icon.png",
+      "assets/icon.ico"
     ],
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
           "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
       ],
       "sign": null,
       "signAndEditExecutable": false,
       "icon": "assets/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "AI学习诊断",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "license": "LICENSE.txt"
     },
     "portable": {
       "artifactName": "AI学习诊断-Portable-${version}.exe"

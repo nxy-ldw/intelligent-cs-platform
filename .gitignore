@@ -20,6 +20,7 @@ AI学习诊断-Windows桌面端.zip
 # public/downloads/*.apk
 # public/downloads/*.zip
 !public/downloads/.gitkeep
+!public/downloads/*.zip
 
 # Android构建输出
 android/.gradle/

@@ -1,13 +1,20 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, dialog, nativeTheme } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
 
-// 配置
 const APP_URL = 'https://intelligent-cs-platform-production-c547.up.railway.app/';
 const APP_NAME = 'AI学习诊断';
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '1.0.2';
 
 let mainWindow = null;
 let isQuitting = false;
+
+// 关键修复：禁用 GPU 硬件加速，避免便携版从 temp 目录运行时 GPU 缓存权限错误
+app.disableHardwareAcceleration();
+// 关键修复：禁用沙箱，避免 portable 运行环境下 preload 脚本加载失败
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+// 设置用户数据目录到 EXE 同级，避免 temp 目录权限问题
+app.setPath('userData', path.join(process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(app.getPath('exe')), 'appdata'));
 
 // 单例锁
 const gotTheLock = app.requestSingleInstanceLock();
@@ -24,72 +31,40 @@ if (!gotTheLock) {
 }
 
 function createWindow() {
-  const iconPath = path.join(__dirname, 'assets', 'icon.png');
-  const fs = require('fs');
-
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 900,
     minHeight: 600,
     title: APP_NAME,
-    ...(fs.existsSync(iconPath) ? { icon: iconPath } : {}),
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     backgroundColor: '#f1f5f9',
-    show: false,
+    show: true,  // 关键修复：直接显示，不等待 ready-to-show
     autoHideMenuBar: true,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
       webSecurity: true,
-      allowRunningInsecureContent: false
+      allowRunningInsecureContent: false,
+      // 关键修复：不用 preload，通过 dom-ready 注入 JS 实现 desktop 标记
     }
   });
 
-  // 设置自定义 User-Agent（必须在 loadURL 之前）
+  // 在加载页面之前设置 User-Agent
   mainWindow.webContents.setUserAgent(
-    mainWindow.webContents.getUserAgent() + ' AILearningDesktop/1.0.1 Electron'
+    mainWindow.webContents.getUserAgent() + ' AILearningDesktop/1.0.2 Electron'
   );
 
   // 加载主页面
   mainWindow.loadURL(APP_URL);
 
-  // 超时保底：10 秒后强制显示窗口（防止服务器慢导致白屏无反应）
-  const showTimeout = setTimeout(() => {
-    if (mainWindow && !mainWindow.isVisible()) {
-      mainWindow.show();
-    }
-  }, 10000);
-
-  // 页面准备好后显示
-  mainWindow.once('ready-to-show', () => {
-    clearTimeout(showTimeout);
-    mainWindow.show();
-  });
-
-  // 加载失败时也显示窗口并展示错误
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    clearTimeout(showTimeout);
-    if (mainWindow && !mainWindow.isVisible()) {
-      mainWindow.show();
-    }
-    mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`
-      <html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f1f5f9;color:#64748b;font-family:sans-serif;text-align:center;padding:40px;">
-        <div style="font-size:64px;margin-bottom:16px;">⚠️</div>
-        <h2 style="color:#0f172a;margin-bottom:8px;">连接失败</h2>
-        <p style="margin-bottom:8px;">无法连接到服务器，请检查网络连接后重试。</p>
-        <p style="font-size:12px;color:#94a3b8;margin-bottom:24px;">${errorDescription || 'Error ' + errorCode}</p>
-        <button onclick="location.href='${APP_URL}'" style="padding:12px 28px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">重试</button>
-      </body></html>
-    `));
-  });
-
-  // 每次页面加载完成后注入 CSS/JS
+  // 页面加载完成后注入 CSS/JS
   mainWindow.webContents.on('dom-ready', () => {
     mainWindow.webContents.executeJavaScript(`
       (function() {
         document.documentElement.setAttribute('data-app', 'desktop');
+        window.electronAPI = { isDesktop: true, platform: 'win32' };
         if (location.pathname.includes('downloads')) {
           location.href = '/';
           return;
@@ -114,8 +89,22 @@ function createWindow() {
       a[href*="downloads"] { display: none !important; }
       .nav-buttons .btn-outline[onclick*="downloads"] { display: none !important; }
       .hero-cta a[href*="downloads"] { display: none !important; }
-      .navbar { -webkit-app-region: no-drag; }
     `).catch(() => {});
+  });
+
+  // 加载失败时显示错误页
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    if (errorCode !== -3) { // 忽略 cancelled 错误
+      mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(`
+        <html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#f1f5f9;color:#64748b;font-family:sans-serif;text-align:center;padding:40px;">
+          <div style="font-size:64px;margin-bottom:16px;">\u26a0\ufe0f</div>
+          <h2 style="color:#0f172a;margin-bottom:8px;">\u8fde\u63a5\u5931\u8d25</h2>
+          <p style="margin-bottom:8px;">\u65e0\u6cd5\u8fde\u63a5\u5230\u670d\u52a1\u5668\uff0c\u8bf7\u68c0\u67e5\u7f51\u7edc\u8fde\u63a5\u540e\u91cd\u8bd5\u3002</p>
+          <p style="font-size:12px;color:#94a3b8;margin-bottom:24px;">${errorDescription || 'Error ' + errorCode}</p>
+          <button onclick="location.href='${APP_URL}'" style="padding:12px 28px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;">\u91cd\u8bd5</button>
+        </body></html>
+      `));
+    }
   });
 
   // 导航限制
@@ -158,7 +147,6 @@ function createWindow() {
   });
 }
 
-// 创建系统菜单
 function createMenu() {
   const template = [
     {
@@ -175,13 +163,13 @@ function createMenu() {
     {
       label: '编辑',
       submenu: [
-        { label: '撤销', accelerator: 'Ctrl+Z', role: 'undo' },
-        { label: '重做', accelerator: 'Ctrl+Y', role: 'redo' },
+        { label: '撤销', role: 'undo' },
+        { label: '重做', role: 'redo' },
         { type: 'separator' },
-        { label: '剪切', accelerator: 'Ctrl+X', role: 'cut' },
-        { label: '复制', accelerator: 'Ctrl+C', role: 'copy' },
-        { label: '粘贴', accelerator: 'Ctrl+V', role: 'paste' },
-        { label: '全选', accelerator: 'Ctrl+A', role: 'selectAll' }
+        { label: '剪切', role: 'cut' },
+        { label: '复制', role: 'copy' },
+        { label: '粘贴', role: 'paste' },
+        { label: '全选', role: 'selectAll' }
       ]
     },
     {
@@ -218,35 +206,6 @@ function showAboutDialog() {
     detail: `版本: ${APP_VERSION}\n\nAI个性化学习诊断辅导系统\n基于人工智能技术的智能学习辅助工具\n\n© 2024 AI Learning Platform.`
   });
 }
-
-// IPC 通信
-ipcMain.handle('get-app-info', () => {
-  return {
-    name: APP_NAME,
-    version: APP_VERSION,
-    url: APP_URL,
-    platform: process.platform,
-    arch: process.arch
-  };
-});
-
-ipcMain.handle('minimize-window', () => {
-  if (mainWindow) mainWindow.minimize();
-});
-
-ipcMain.handle('maximize-window', () => {
-  if (mainWindow) {
-    if (mainWindow.isMaximized()) mainWindow.unmaximize();
-    else mainWindow.maximize();
-  }
-});
-
-ipcMain.handle('close-window', () => {
-  if (mainWindow) {
-    isQuitting = true;
-    mainWindow.close();
-  }
-});
 
 // App 生命周期
 app.whenReady().then(() => {
